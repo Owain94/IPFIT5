@@ -16,7 +16,6 @@ global_store = None
 
 class FilepickerFrame(Frame):
     def __init__(self, screen, store):
-        screen.clear()
         self.logger = Logging(self.__class__.__name__).logger
 
         super(FilepickerFrame, self).__init__(
