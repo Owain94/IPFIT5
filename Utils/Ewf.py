@@ -15,7 +15,8 @@ class Ewf(pytsk3.Img_Info):
         self.ewf_handle = pyewf.handle()
         self.ewf_handle.open(filenames)
         self.logger.debug('EWF handle opened')
-        self.logger.info('{} loaded with EWF'.format(store.get_state().split(sep)[-1]))
+        self.logger.info('{} loaded with EWF'.format(
+            store.get_state().split(sep)[-1]))
         super(Ewf, self).__init__(url="", type=pytsk3.TSK_IMG_TYPE_EXTERNAL)
 
     def close(self):
@@ -49,9 +50,11 @@ class EwfInfoMenu(object):
         for part in volume:
             menu_items.append(('Partition address: {}'.format(part.addr), ''))
             menu_items.append(('Partition start: {}'.format(part.start), ''))
-            menu_items.append(('Partition length (relative): {}'.format(part.start + part.len - 1), ''))
+            menu_items.append(
+                ('Partition length (relative): {}'.format(part.start + part.len - 1), ''))
             menu_items.append(('Partition length: {}'.format(part.len), ''))
-            menu_items.append(('Partition description: {}'.format(part.desc.decode('UTF-8')), ''))
+            menu_items.append(
+                ('Partition description: {}'.format(part.desc.decode('UTF-8')), ''))
 
             menu_items.append(('', ''))
 
