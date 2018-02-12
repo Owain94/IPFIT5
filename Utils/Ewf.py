@@ -13,8 +13,8 @@ class Ewf(pytsk3.Img_Info):
         self.ewf_handle = pyewf.handle()
         self.ewf_handle.open(filenames)
         self.logger.debug('EWF handle opened')
-        self.logger.info(
-            '{} loaded with EWF'.format(store.get_state().split(sep)[-1]))
+        self.logger.info('{} loaded with EWF'.format(
+            store.get_state().split(sep)[-1]))
         super(Ewf, self).__init__(url="", type=pytsk3.TSK_IMG_TYPE_EXTERNAL)
 
     def close(self):
