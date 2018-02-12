@@ -2,9 +2,11 @@ import curses
 
 from os import sep
 
-from Utils.FilePicker import filepicker_main as image_filepicker
 from Utils.Store import Store
 from Utils.Logging.Logging import Logging
+from Utils.FilePicker import filepicker_main as image_filepicker
+
+from Utils.Ewf import Ewf, EwfInfoMenu
 
 from Utils.Menu import Menu
 from Files import FilesMenu
@@ -35,10 +37,15 @@ class MainApp(object):
                 ('Load image', self.filepicker)
             ]
         else:
+            self.submenu_file_info = Menu(
+                EwfInfoMenu.menu(self.stores.image_store), self.screen,
+                info=True)
+
             main_menu_items = [
                 ('Load image (Selected image: {})'.format(
                     self.stores.image_store.get_state().split(sep)[-1]),
                  self.filepicker),
+                ('Image information', self.fileinfo),
                 ('Files (Owain van Brakel)', self.menu_files),
                 ('IP (Kasper van den Berg)', self.menu_ip),
                 ('Photos (Virgil Bron)', self.menu_photos)
@@ -49,6 +56,10 @@ class MainApp(object):
     def filepicker(self):
         image_filepicker(self.stores.image_store)
         curses.wrapper(MainApp)
+
+    def fileinfo(self):
+        self.logger.debug('File info menu opened')
+        self.submenu_file_info.display()
 
     def menu_files(self):
         self.logger.debug('Files menu opened')

@@ -7,7 +7,8 @@ from Utils.Logging.Logging import Logging
 
 
 class Menu(object):
-    def __init__(self, items, stdscreen, sub: bool = True):
+    def __init__(self, items, stdscreen, sub: bool = True,
+                 info: bool = False):
         self.logger = Logging(self.__class__.__name__).logger
 
         self.window = stdscreen.subwin(0, 0)
@@ -19,11 +20,19 @@ class Menu(object):
         self.position = 0
         self.items = items
         self.sub = sub
+        self.info = info
+
         if sub:
-            self.items.append(('Return', 'return'))
+            if info:
+                self.items.append(('1. Return', 'return'))
+            else:
+                self.items.append(('Return', 'return'))
             self.logger.debug('Submenu instantiated')
         else:
             self.logger.debug('Menu instantiated')
+
+        if info:
+            self.position = len(items) - 1
 
         # Start colors in curses
         curses.start_color()
@@ -89,7 +98,10 @@ class Menu(object):
                 else:
                     mode = curses.A_NORMAL
 
-                msg = '%d. %s' % (index, item[0])
+                if self.info:
+                    msg = '%s' % item[0]
+                else:
+                    msg = '%d. %s' % (index, item[0])
 
                 if item[1] == 'return':
                     index = index + 4
@@ -107,10 +119,10 @@ class Menu(object):
                 else:
                     self.items[self.position][1]()
 
-            elif key == curses.KEY_UP:
+            elif key == curses.KEY_UP and not self.info:
                 self.navigate(-1)
 
-            elif key == curses.KEY_DOWN:
+            elif key == curses.KEY_DOWN and not self.info:
                 self.navigate(1)
 
             if key == ord('q') or key == ord('Q'):

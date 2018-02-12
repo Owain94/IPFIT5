@@ -1,3 +1,5 @@
 asciimatics
 pydux
 codecov
+libewf-python
+pytsk3
