@@ -10,3 +10,4 @@ class TestMethods(unittest.TestCase):
         assert store.image_store.get_state() == 'initial'
         store.image_store.dispatch({'type': 'set_image', 'image': 'test'})
         assert store.image_store.get_state() == 'test'
+        assert store.image('empty', None) == 'empty'
