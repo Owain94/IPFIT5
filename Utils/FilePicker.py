@@ -43,7 +43,7 @@ class FilepickerFrame(Frame):
 
         # Prepare the Frame for use.
         self.fix()
-        
+
         self.logger.debug('File picker opened')
 
     def selected(self):
