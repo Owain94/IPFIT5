@@ -7,8 +7,7 @@ from Utils.Logging.Logging import Logging
 
 
 class Menu(object):
-    def __init__(self, items, stdscreen, sub: bool = True,
-                 info: bool = False):
+    def __init__(self, items, stdscreen, sub=True, info=False):
         self.logger = Logging(self.__class__.__name__).logger
 
         self.window = stdscreen.subwin(0, 0)
