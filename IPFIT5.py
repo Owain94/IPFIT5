@@ -2,10 +2,10 @@ import curses
 
 from os import sep
 
-from FilePicker import filepicker_main as image_filepicker
-from Store import Store
+from Utils.FilePicker import filepicker_main as image_filepicker
+from Utils.Store import Store
 
-from Menu import Menu
+from Utils.Menu import Menu
 from Files import FilesMenu
 from IP import IpMenu
 from Photos import PhotosMenu

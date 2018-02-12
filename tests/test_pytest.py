@@ -1,4 +1,4 @@
-from Store import Store
+from Utils.Store import Store
 
 
 def test_image_store_case():
