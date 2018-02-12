@@ -3,9 +3,13 @@ import sys
 
 from curses import panel
 
+from Utils.Logging.Logging import Logging
+
 
 class Menu(object):
     def __init__(self, items, stdscreen, sub: bool = True):
+        self.logger = Logging(self.__class__.__name__).logger
+
         self.window = stdscreen.subwin(0, 0)
         self.window.keypad(1)
         self.panel = panel.new_panel(self.window)
@@ -14,14 +18,17 @@ class Menu(object):
 
         self.position = 0
         self.items = items
+        self.sub = sub
         if sub:
             self.items.append(('Return', 'return'))
+            self.logger.debug('Submenu instantiated')
+        else:
+            self.logger.debug('Menu instantiated')
 
         # Start colors in curses
         curses.start_color()
-        curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
-        curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
-        curses.init_pair(3, curses.COLOR_BLACK, curses.COLOR_WHITE)
+        curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
+        curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE)
 
     def navigate(self, n):
         self.position += n
@@ -39,29 +46,33 @@ class Menu(object):
             height, width = self.window.getmaxyx()
 
             # Declaration of strings
-            title = "IPFIT5"[:width - 1]
-            subtitle = "Owain van Brakel | Kasper van den Berg | Virgil Bron"[:width - 1]
-            statusbarstr = "Press 'q' to exit"
+            title = 'IPFIT5'[:width - 1]
+            subtitle = 'Owain van Brakel | Kasper van den Berg | Virgil Bron'[
+                       :width - 1]
+            statusbarstr = 'Press \'q\' to exit'
 
             # Centering calculations
-            start_x_title = int((width // 2) - (len(title) // 2) - len(title) % 2)
-            start_x_subtitle = int((width // 2) - (len(subtitle) // 2) - len(subtitle) % 2)
+            start_x_title = int(
+                (width // 2) - (len(title) // 2) - len(title) % 2)
+            start_x_subtitle = int(
+                (width // 2) - (len(subtitle) // 2) - len(subtitle) % 2)
 
             # Render status bar
-            self.window.attron(curses.color_pair(3))
+            self.window.attron(curses.color_pair(2))
             self.window.addstr(height - 1, 0, statusbarstr)
-            self.window.addstr(height - 1, len(statusbarstr), " " * (width - len(statusbarstr) - 1))
-            self.window.attroff(curses.color_pair(3))
+            self.window.addstr(height - 1, len(statusbarstr),
+                               ' ' * (width - len(statusbarstr) - 1))
+            self.window.attroff(curses.color_pair(2))
 
             # Turning on attributes for title
-            self.window.attron(curses.color_pair(2))
+            self.window.attron(curses.color_pair(1))
             self.window.attron(curses.A_BOLD)
 
             # Rendering title
             self.window.addstr(0, start_x_title, title)
 
             # Turning off attributes for title
-            self.window.attroff(curses.color_pair(2))
+            self.window.attroff(curses.color_pair(1))
             self.window.attroff(curses.A_BOLD)
 
             # Print rest of text
@@ -91,6 +102,7 @@ class Menu(object):
 
             if key in [curses.KEY_ENTER, ord('\n')]:
                 if (self.items[self.position][1]) == 'return':
+                    self.logger.debug('Submenu exited')
                     break
                 else:
                     self.items[self.position][1]()
@@ -102,6 +114,7 @@ class Menu(object):
                 self.navigate(1)
 
             if key == ord('q') or key == ord('Q'):
+                self.logger.info('Application exited')
                 sys.exit('User exited')
 
         self.window.clear()
