@@ -9,6 +9,7 @@ import time
 
 BLOCKSIZE = 65536
 
+
 def flatten(iterable):
     iterator, sentinel, stack = iter(iterable), object(), []
     while True:
@@ -27,9 +28,12 @@ def flatten(iterable):
             else:
                 stack.append(iterator)
                 iterator = new_iterator
+
+
 def getSize(filename):
     st = os.stat(filename)
     return st.st_size
+
 
 def hash_file(file):
     hasher = hashlib.sha256()
@@ -46,6 +50,7 @@ def hash_file(file):
 
     return hasher.hexdigest()
 
+
 def hash_tree(files):
     P = Pool(cpu_count())
 
@@ -53,11 +58,14 @@ def hash_tree(files):
 
     return hashed
 
+
 def walk_dir():
     for root, dirs, files in os.walk("C:/Users/Kasper/Documents", topdown=False):
         for name in files:
             yield os.path.join(root, name)
     print("Done yielding things")
+
+
 if __name__ == '__main__':
     n = 0
     for f in walk_dir():
