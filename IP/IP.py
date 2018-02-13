@@ -1,11 +1,10 @@
 import os
-import mmap
+import time
 import hashlib
 import contextlib
 
-from itertools import chain
+from mmap import mmap, ACCESS_READ
 from multiprocessing import Pool, cpu_count
-import time
 
 BLOCKSIZE = 65536
 
@@ -42,7 +41,7 @@ def hash_file(file):
         return ""
     with open(file, 'rb') as f:
 
-        with contextlib.closing(mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)) as m:
+        with contextlib.closing(mmap(f.fileno(), 0, access=ACCESS_READ)) as m:
             buf = m.read(BLOCKSIZE)
             while len(buf) > 0:
                 hasher.update(buf)
@@ -60,7 +59,7 @@ def hash_tree(files):
 
 
 def walk_dir():
-    for root, dirs, files in os.walk("C:/Users/Kasper/Documents", topdown=False):
+    for root, _, files in os.walk("C:/Users/Kasper/Documents", topdown=False):
         for name in files:
             yield os.path.join(root, name)
     print("Done yielding things")
