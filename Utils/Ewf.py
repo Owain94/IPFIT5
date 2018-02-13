@@ -15,7 +15,7 @@ class Ewf(pytsk3.Img_Info):
         self.logger.debug('EWF handle opened')
         self.logger.info('{} loaded with EWF'.format(
             store.get_state().split(sep)[-1]))
-        super(Ewf, self).__init__(url="", type=pytsk3.TSK_IMG_TYPE_EXTERNAL)
+        super(Ewf, self).__init__(url='', type=pytsk3.TSK_IMG_TYPE_EXTERNAL)
 
     def close(self):
         self.logger.debug('EWF handle closed')
@@ -43,6 +43,7 @@ class EwfInfoMenu(object):
         ewf = Ewf(store)
         volume = ewf.info()
 
+        amount = 0
         menu_items = []
 
         for part in volume:
@@ -56,6 +57,9 @@ class EwfInfoMenu(object):
 
             menu_items.append(('', ''))
 
-            print(part.addr)
+            amount += 1
+
+        menu_items.insert(0, ('', ''))
+        menu_items.insert(0, ('Amount of partitions: {}'.format(amount), ''))
 
         return menu_items

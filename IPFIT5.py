@@ -54,6 +54,7 @@ class MainApp(object):
         main_menu.display()
 
     def filepicker(self):
+        self.logger.debug('File picker opened')
         image_filepicker(self.stores.image_store)
         curses.wrapper(MainApp)
 
