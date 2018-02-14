@@ -103,7 +103,7 @@ class Ewf(pytsk3.Img_Info):
             if not hasattr(fs_object, "info") \
                     or not hasattr(fs_object.info, "name") or not hasattr(
                     fs_object.info.name, "name") or \
-                    fs_object.info.name.name in [".", ".."]:
+                    fs_object.info.name.name.decode('UTF-8') in [".", ".."]:
                 continue
             try:
                 file_name = fs_object.info.name.name.decode('UTF-8')
