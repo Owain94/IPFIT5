@@ -2,6 +2,7 @@ import pyewf
 import pytsk3
 
 from os import sep
+from re import match
 from sys import setrecursionlimit, exc_info
 from pathlib import Path as PathlibPath
 from datetime import datetime
@@ -20,6 +21,7 @@ class Ewf(pytsk3.Img_Info):
 
         self.ext = PathlibPath(store.get_state()).suffix.lower()[1:]
         self.block_size = 0
+        self.search_result = None
         self.logger.debug('Extension: ' + self.ext)
 
         if self.ext == 'e01' or self.ext == 's01' or self.ext == 'ex01' or \
@@ -54,7 +56,13 @@ class Ewf(pytsk3.Img_Info):
         self.block_size = volume.info.block_size
         return volume
 
-    def files(self):
+    def search_file(self, search):
+        self.files(search)
+        search_result = self.search_result
+        self.search_result = None
+        return search_result
+
+    def files(self, search=None):
         vol = self.info()
         if self.ext == 'e01' or self.ext == 's01' or self.ext == 'ex01' or \
                 self.ext == 'l01' or self.ext == 'lx01':
@@ -79,7 +87,7 @@ class Ewf(pytsk3.Img_Info):
                         # print("[-] Unable to open FS:\n {}".format(e))
                     root = fs.open_dir(path="/")
                     data = self.recurse_files(part.addr, fs, root, [], [],
-                                              [""])
+                                              [""], search)
                     recursed_data.append(data)
 
         else:
@@ -89,12 +97,13 @@ class Ewf(pytsk3.Img_Info):
                 _, e, _ = exc_info()
                 # print("[-] Unable to open FS:\n {}".format(e))
             root = fs.open_dir(path="/")
-            data = self.recurse_files(1, fs, root, [], [], [""])
+            data = self.recurse_files(1, fs, root, [], [], [""], search)
             recursed_data.append(data)
 
         return recursed_data
 
-    def recurse_files(self, part, fs, root_dir, dirs, data, parent):
+    def recurse_files(self, part, fs, root_dir, dirs, data, parent,
+                      search=None):
         # print('Recurse')
         dirs.append(root_dir.info.fs_file.meta.addr)
         for fs_object in root_dir:
@@ -106,6 +115,12 @@ class Ewf(pytsk3.Img_Info):
                 continue
             try:
                 file_name = fs_object.info.name.name.decode('UTF-8')
+                if search:
+                    search_result = match(search, file_name)
+                    if search_result:
+                        self.search_result = search_result
+                        return
+
                 file_path = "{}/{}".format(
                     "/".join(parent),
                     fs_object.info.name.name.decode('UTF-8'))
