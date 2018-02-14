@@ -18,6 +18,7 @@ class Ewf(pytsk3.Img_Info):
         self.image_handle = None
 
         self.ext = PathlibPath(store.get_state()).suffix.lower()[1:]
+        self.block_size = 0
         self.logger.debug('Extension: ' + self.ext)
 
         if self.ext == 'e01' or self.ext == 's01' or self.ext == 'ex01' or self.ext == 'l01' or self.ext == 'lx01':
@@ -58,8 +59,7 @@ class EwfInfoMenu(object):
         ewf = Ewf(store)
         volume = ewf.info()
 
-        amount = 0
-        menu_items = []
+        menu_items = [('Amount of partitions: {}'.format(volume.info.part_count), ''), ('', '')]
 
         for part in volume:
             menu_items.append(('Partition address: {}'.format(part.addr), ''))
@@ -71,10 +71,5 @@ class EwfInfoMenu(object):
                 part.desc.decode('UTF-8')), ''))
 
             menu_items.append(('', ''))
-
-            amount += 1
-
-        menu_items.insert(0, ('', ''))
-        menu_items.insert(0, ('Amount of partitions: {}'.format(amount), ''))
 
         return menu_items
