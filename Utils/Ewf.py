@@ -47,6 +47,8 @@ class Ewf(pytsk3.Img_Info):
         else:
             self.image_handle = pytsk3.Img_Info(url=self.store.get_state())
             volume = pytsk3.Volume_Info(self.image_handle)
+
+        self.block_size = volume.info.block_size
         return volume
 
 
