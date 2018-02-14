@@ -1,12 +1,10 @@
 import pyewf
 import pytsk3
 
-import csv
-from datetime import datetime
-
 from os import sep
-from sys import setrecursionlimit, exc_info, exit
+from sys import setrecursionlimit, exc_info
 from pathlib import Path as PathlibPath
+from datetime import datetime
 
 from Utils.Logging.Logging import Logging
 
