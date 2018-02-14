@@ -47,7 +47,6 @@ class Ewf(pytsk3.Img_Info):
         if self.ext == 'e01' or self.ext == 's01' or self.ext == 'ex01' or \
                 self.ext == 'l01' or self.ext == 'lx01':
             volume = pytsk3.Volume_Info(self)
-            self.close()
         else:
             self.image_handle = pytsk3.Img_Info(url=self.store.get_state())
             volume = pytsk3.Volume_Info(self.image_handle)
@@ -103,7 +102,7 @@ class Ewf(pytsk3.Img_Info):
             if not hasattr(fs_object, "info") \
                     or not hasattr(fs_object.info, "name") or not hasattr(
                     fs_object.info.name, "name") or \
-                    fs_object.info.name.name in [".", ".."]:
+                    fs_object.info.name.name.decode('UTF-8') in [".", ".."]:
                 continue
             try:
                 file_name = fs_object.info.name.name.decode('UTF-8')
@@ -118,8 +117,7 @@ class Ewf(pytsk3.Img_Info):
                     else:
                         f_type = "FILE"
                         if "." in file_name:
-                            file_ext = PathlibPath(
-                                file_name.decode('UTF-8')).suffix.lower()[1:]
+                            file_ext = file_name.rsplit(".")[-1].lower()
                         else:
                             file_ext = ""
                 except AttributeError:
