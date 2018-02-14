@@ -118,8 +118,7 @@ class Ewf(pytsk3.Img_Info):
                     else:
                         f_type = "FILE"
                         if "." in file_name:
-                            file_ext = PathlibPath(
-                                file_name.decode('UTF-8')).suffix.lower()[1:]
+                            file_ext = file_name.rsplit(".")[-1].lower()
                         else:
                             file_ext = ""
                 except AttributeError:
