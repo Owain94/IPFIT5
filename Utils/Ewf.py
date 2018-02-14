@@ -47,7 +47,6 @@ class Ewf(pytsk3.Img_Info):
         if self.ext == 'e01' or self.ext == 's01' or self.ext == 'ex01' or \
                 self.ext == 'l01' or self.ext == 'lx01':
             volume = pytsk3.Volume_Info(self)
-            self.close()
         else:
             self.image_handle = pytsk3.Img_Info(url=self.store.get_state())
             volume = pytsk3.Volume_Info(self.image_handle)
