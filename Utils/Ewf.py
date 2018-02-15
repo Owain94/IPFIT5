@@ -115,7 +115,8 @@ class Ewf(pytsk3.Img_Info):
                         sha256_sum = sha256()
                         while offset < size:
                             available_to_read = min(buff_size, size - offset)
-                            data = fs_object.read_random(offset, available_to_read)
+                            data = fs_object.read_random(
+                                offset, available_to_read)
                             if not data:
                                 break
 
