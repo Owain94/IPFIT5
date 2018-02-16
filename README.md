@@ -3,4 +3,9 @@
 [![codebeat badge](https://codebeat.co/badges/cd8f47fd-323e-4a7f-a425-f36fe1e58a73)](https://codebeat.co/projects/github-com-owain94-ipfit5-master)
 [![codecov](https://codecov.io/gh/Owain94/IPFIT5/branch/master/graph/badge.svg)](https://codecov.io/gh/Owain94/IPFIT5)
 
-- Something goes here...
+IPFIT5
+===
+Dit glorieuze project is mede mogelijk gemaakt door: 
+- Virgil 
+- Owain 
+- Kasper
