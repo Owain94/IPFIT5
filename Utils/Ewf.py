@@ -78,30 +78,30 @@ class Ewf(pytsk3.Img_Info):
         # Open FS and Recurse
         if vol is not None:
             for part in vol:
-                if part.len > 2048 and "Unallocated" not in part.desc.decode(
-                        'UTF-8') and "Extended" not in part.desc.decode(
-                        'UTF-8') and "Primary Table" not in part.desc.decode(
+                if part.len > 2048 and 'Unallocated' not in part.desc.decode(
+                        'UTF-8') and 'Extended' not in part.desc.decode(
+                        'UTF-8') and 'Primary Table' not in part.desc.decode(
                         'UTF-8'):
                     try:
                         fs = pytsk3.FS_Info(
                             img, offset=part.start * vol.info.block_size)
                     except IOError:
                         _, e, _ = exc_info()
-                        # print("[-] Unable to open FS:\n {}".format(e))
+                        # print('[-] Unable to open FS:\n {}'.format(e))
                     root = fs.open_dir(path=path)
         else:
             try:
                 fs = pytsk3.FS_Info(img)
             except IOError:
                 _, e, _ = exc_info()
-                # print("[-] Unable to open FS:\n {}".format(e))
+                # print('[-] Unable to open FS:\n {}'.format(e))
             root = fs.open_dir(path=path)
 
         for fs_object in root:
-            if not hasattr(fs_object, "info") \
-                    or not hasattr(fs_object.info, "name") or not hasattr(
-                    fs_object.info.name, "name") or \
-                    fs_object.info.name.name.decode('UTF-8') in [".", ".."]:
+            if not hasattr(fs_object, 'info') \
+                    or not hasattr(fs_object.info, 'name') or not hasattr(
+                    fs_object.info.name, 'name') or \
+                    fs_object.info.name.name.decode('UTF-8') in ['.', '..']:
                 continue
             try:
                 if fs_object.info.name.name.decode('UTF-8') == filename:
@@ -135,25 +135,25 @@ class Ewf(pytsk3.Img_Info):
             img = self
         else:
             img = self.image_handle
-        # print("[+] Recursing through files..")
+        # print('[+] Recursing through files..')
         recursed_data = []
         fs = None
         # Open FS and Recurse
         if vol is not None:
             for part in vol:
-                if part.len > 2048 and "Unallocated" not in part.desc.decode(
-                        'UTF-8') and "Extended" not in part.desc.decode(
-                        'UTF-8') and "Primary Table" not in part.desc.decode(
+                if part.len > 2048 and 'Unallocated' not in part.desc.decode(
+                        'UTF-8') and 'Extended' not in part.desc.decode(
+                        'UTF-8') and 'Primary Table' not in part.desc.decode(
                         'UTF-8'):
                     try:
                         fs = pytsk3.FS_Info(
                             img, offset=part.start * vol.info.block_size)
                     except IOError:
                         _, e, _ = exc_info()
-                        # print("[-] Unable to open FS:\n {}".format(e))
-                    root = fs.open_dir(path="/")
+                        # print('[-] Unable to open FS:\n {}'.format(e))
+                    root = fs.open_dir(path='/')
                     data = self.recurse_files(part.addr, fs, root, [], [],
-                                              [""], search)
+                                              [''], search)
                     recursed_data.append(data)
 
         else:
@@ -161,9 +161,9 @@ class Ewf(pytsk3.Img_Info):
                 fs = pytsk3.FS_Info(img)
             except IOError:
                 _, e, _ = exc_info()
-                # print("[-] Unable to open FS:\n {}".format(e))
-            root = fs.open_dir(path="/")
-            data = self.recurse_files(1, fs, root, [], [], [""], search)
+                # print('[-] Unable to open FS:\n {}'.format(e))
+            root = fs.open_dir(path='/')
+            data = self.recurse_files(1, fs, root, [], [], [''], search)
             recursed_data.append(data)
 
         return recursed_data
@@ -173,11 +173,11 @@ class Ewf(pytsk3.Img_Info):
         # print('Recurse')
         dirs.append(root_dir.info.fs_file.meta.addr)
         for fs_object in root_dir:
-            # Skip ".", ".." or directory entries without a name.
-            if not hasattr(fs_object, "info") \
-                    or not hasattr(fs_object.info, "name") or not hasattr(
-                fs_object.info.name, "name") or \
-                    fs_object.info.name.name.decode('UTF-8') in [".", ".."]:
+            # Skip '.', '..' or directory entries without a name.
+            if not hasattr(fs_object, 'info') \
+                    or not hasattr(fs_object.info, 'name') or not hasattr(
+                fs_object.info.name, 'name') or \
+                    fs_object.info.name.name.decode('UTF-8') in ['.', '..']:
                 continue
             try:
                 file_name = fs_object.info.name.name.decode('UTF-8')
@@ -188,20 +188,20 @@ class Ewf(pytsk3.Img_Info):
                         self.search_result = fs_object
                         return
 
-                file_path = "{}/{}".format(
-                    "/".join(parent),
+                file_path = '{}/{}'.format(
+                    '/'.join(parent),
                     fs_object.info.name.name.decode('UTF-8'))
                 try:
                     if fs_object.info.meta.type == \
                             pytsk3.TSK_FS_META_TYPE_DIR:
-                        f_type = "DIR"
-                        file_ext = ""
+                        f_type = 'DIR'
+                        file_ext = ''
                     else:
-                        f_type = "FILE"
-                        if "." in file_name:
-                            file_ext = file_name.rsplit(".")[-1].lower()
+                        f_type = 'FILE'
+                        if '.' in file_name:
+                            file_ext = file_name.rsplit('.')[-1].lower()
                         else:
-                            file_ext = ""
+                            file_ext = ''
                 except AttributeError:
                     continue
 
@@ -210,10 +210,10 @@ class Ewf(pytsk3.Img_Info):
                 change = self.convert_time(fs_object.info.meta.ctime)
                 modify = self.convert_time(fs_object.info.meta.mtime)
                 data.append(
-                    ["PARTITION {}".format(part), file_name, file_ext, f_type,
+                    ['PARTITION {}'.format(part), file_name, file_ext, f_type,
                      create, change, modify, size, file_path])
 
-                if f_type == "DIR":
+                if f_type == 'DIR':
                     parent.append(fs_object.info.name.name.decode('UTF-8'))
                     sub_directory = fs_object.as_directory()
                     inode = fs_object.info.meta.addr
@@ -232,8 +232,8 @@ class Ewf(pytsk3.Img_Info):
 
     @staticmethod
     def convert_time(ts):
-        if str(ts) == "0":
-            return ""
+        if str(ts) == '0':
+            return ''
         return datetime.utcfromtimestamp(ts)
 
 
