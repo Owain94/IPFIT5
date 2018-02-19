@@ -182,7 +182,7 @@ class Ewf(pytsk3.Img_Info):
             try:
                 file_name = fs_object.info.name.name.decode('UTF-8')
                 if search or True:
-                    search_result = match('autoexec', file_name)
+                    search_result = match(search, file_name)
                     print(search_result, file_name)
                     if search_result:
                         self.search_result = fs_object
