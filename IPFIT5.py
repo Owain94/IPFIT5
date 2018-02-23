@@ -27,16 +27,19 @@ class MainApp(object):
         self.screen = stdscreen
         curses.curs_set(0)
 
-        self.submenu_files = Menu(FilesMenu.FilesMenu.menu(), self.screen)
-        self.submenu_ip = Menu(IpMenu.IpMenu.menu(), self.screen)
-        self.submenu_photos = Menu(PhotosMenu.PhotosMenu.menu(), self.screen)
-
         if self.stores.image_store.get_state() == 'initial' or \
                 self.stores.image_store.get_state() is None:
             main_menu_items = [
                 ('Load image', self.filepicker)
             ]
         else:
+            self.files = FilesMenu.FilesMenu(self.stores.image_store)
+
+            self.submenu_files = Menu(self.files.menu(), self.screen)
+            self.submenu_ip = Menu(IpMenu.IpMenu.menu(), self.screen)
+            self.submenu_photos = Menu(PhotosMenu.PhotosMenu.menu(),
+                                       self.screen)
+
             self.submenu_file_info = Menu(
                 EwfInfoMenu.menu(self.stores.image_store), self.screen,
                 info=True)

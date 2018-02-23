@@ -38,7 +38,7 @@ def hash_file(file):
     hasher = hashlib.sha256()
     s = getSize(file)
     if s <= 0 or s > 1000000000:
-        return ""
+        return ''
     with open(file, 'rb') as f:
 
         with contextlib.closing(mmap(f.fileno(), 0, access=ACCESS_READ)) as m:
@@ -59,10 +59,10 @@ def hash_tree(files):
 
 
 def walk_dir():
-    for root, _, files in os.walk("C:/Users/Kasper/Documents", topdown=False):
+    for root, _, files in os.walk('C:/Users/Kasper/Documents', topdown=False):
         for name in files:
             yield os.path.join(root, name)
-    print("Done yielding things")
+    print('Done yielding things')
 
 
 if __name__ == '__main__':
