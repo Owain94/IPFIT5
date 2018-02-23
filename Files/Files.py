@@ -20,11 +20,13 @@ class Files:
 
     def search(self):
         # data = self.ewf.search_file('Canopus.txt')
-        data = self.ewf.hash_file('/mb_bios_x399-aorus-gaming7_f3g/', 'X399AG7.F3g')
+        data = self.ewf.hash_file(
+            '/mb_bios_x399-aorus-gaming7_f3g/', 'X399AG7.F3g')
         print(data)
 
     def get_hash(self, file, shared_list):
-        sha_sum = self.ewf.hash_file(file[1], Ewf.rreplace(file[8], file[1], ''))
+        sha_sum = self.ewf.hash_file(
+            file[1], Ewf.rreplace(file[8], file[1], ''))
 
         print(sha_sum)
         file.append(sha_sum)
