@@ -23,6 +23,7 @@ class Ewf(pytsk3.Img_Info):
         self.ext = PathlibPath(store.get_state()).suffix.lower()[1:]
         self.block_size = 0
         self.search_result = None
+        self.sha_sum = None
         self.logger.debug('Extension: ' + self.ext)
 
         if self.ext == 'e01' or self.ext == 's01' or self.ext == 'ex01' or \
@@ -57,16 +58,25 @@ class Ewf(pytsk3.Img_Info):
         self.block_size = volume.info.block_size
         return volume
 
-    def hash_file(self, path, filename):
-        return self.file(path, filename, True)
+    @staticmethod
+    def rreplace(s, old, new):
+        return (s[::-1].replace(old[::-1], new[::-1], 1))[::-1]
+
+    def hash_file(self, filename, path):
+        self.file(path, filename, True)
+        sha_sum = self.sha_sum
+        self.sha_sum = None
+
+        return sha_sum
 
     def search_file(self, search):
         self.files(search)
         search_result = self.search_result
         self.search_result = None
+
         return search_result
 
-    def file(self, path, filename, hash=False):
+    def file(self, path, filename, hashing=False):
         vol = self.info()
         if self.ext == 'e01' or self.ext == 's01' or self.ext == 'ex01' or \
                 self.ext == 'l01' or self.ext == 'lx01':
@@ -88,7 +98,10 @@ class Ewf(pytsk3.Img_Info):
                     except IOError:
                         _, e, _ = exc_info()
                         # print('[-] Unable to open FS:\n {}'.format(e))
-                    root = fs.open_dir(path=path)
+                    try:
+                        root = fs.open_dir(path=path)
+                    except OSError:
+                        return
         else:
             try:
                 fs = pytsk3.FS_Info(img)
@@ -105,24 +118,31 @@ class Ewf(pytsk3.Img_Info):
                 continue
             try:
                 if fs_object.info.name.name.decode('UTF-8') == filename:
-                    if not hash:
+                    if not hashing:
                         return fs_object
                     else:
-                        offset = 0
-                        size = fs_object.info.meta.size
-                        buff_size = 1024 * 1024
+                        if fs_object.info.meta.type == \
+                                pytsk3.TSK_FS_META_TYPE_DIR:
+                            self.sha_sum = ''
+                            return
+                        else:
+                            offset = 0
+                            size = fs_object.info.meta.size
+                            buff_size = 1024 * 1024
 
-                        sha256_sum = sha256()
-                        while offset < size:
-                            available_to_read = min(buff_size, size - offset)
-                            data = fs_object.read_random(
-                                offset, available_to_read)
-                            if not data:
-                                break
+                            sha256_sum = sha256()
+                            while offset < size:
+                                available_to_read = min(buff_size, size -
+                                                        offset)
+                                data = fs_object.read_random(
+                                    offset, available_to_read)
+                                if not data:
+                                    break
 
-                            offset += len(data)
-                            sha256_sum.update(data)
-                        return sha256_sum.hexdigest()
+                                offset += len(data)
+                                sha256_sum.update(data)
+                            self.sha_sum = sha256_sum.hexdigest()
+                        return
             except IOError:
                 pass
 
@@ -181,9 +201,8 @@ class Ewf(pytsk3.Img_Info):
                 continue
             try:
                 file_name = fs_object.info.name.name.decode('UTF-8')
-                if search or True:
+                if search:
                     search_result = match(search, file_name)
-                    print(search_result, file_name)
                     if search_result:
                         self.search_result = fs_object
                         return
