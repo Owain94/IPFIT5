@@ -18,17 +18,10 @@ class Files:
 
         return data
 
-    def search(self):
-        # data = self.ewf.search_file('Canopus.txt')
-        data = self.ewf.hash_file(
-            '/mb_bios_x399-aorus-gaming7_f3g/', 'X399AG7.F3g')
-        print(data)
-
     def get_hash(self, file, shared_list):
         sha_sum = self.ewf.hash_file(
             file[1], Ewf.rreplace(file[8], file[1], ''))
 
-        print(sha_sum)
         file.append(sha_sum)
 
         shared_list.append(file)
@@ -53,9 +46,6 @@ class Files:
             lst = [x for x in shared_list]
 
             self.write_csv([lst], 'test.csv')
-            # print(shared_list)
-
-        # pool.apply_async(self.get_hash, args=(file[1], Ewf.rreplace(file[8], file[1], '')
 
     @staticmethod
     def write_csv(data, output):
