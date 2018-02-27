@@ -45,7 +45,7 @@ class Files:
 
             lst = [x for x in shared_list]
 
-            self.write_csv([lst], 'test.csv')
+        self.write_csv([lst], 'test.csv')
 
     @staticmethod
     def write_csv(data, output):

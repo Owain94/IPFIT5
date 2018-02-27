@@ -14,7 +14,6 @@ class FilesMenu(object):
     def menu(self):
         menu_items = [
             ('Files', self.files.get_files),
-            ('Search', self.files.search),
             ('Hashes', self.files.get_hashes)
         ]
 

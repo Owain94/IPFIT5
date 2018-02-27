@@ -1,4 +1,4 @@
-asciimatics
+git+https://github.com/peterbrittain/asciimatics.git
 pydux
 codecov
 libewf-python

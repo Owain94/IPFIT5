@@ -10,7 +10,8 @@ class IpMenu(object):
     @staticmethod
     def menu():
         menu_items = [
-            ('Placeholder', curses.beep)
+            ('Placeholder', curses.beep),
+            ('Placeholder', curses.flash)
         ]
 
         return menu_items
