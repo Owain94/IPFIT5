@@ -7,9 +7,9 @@ import csv
 
 
 class Files:
-    def __init__(self, store):
+    def __init__(self):
         self.logger = Logging(self.__class__.__name__).logger
-        self.ewf = Ewf(store)
+        self.ewf = Ewf()
         self.data = []
 
     def get_files(self):

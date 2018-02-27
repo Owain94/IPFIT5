@@ -8,19 +8,20 @@ from sys import setrecursionlimit, exc_info
 from pathlib import Path as PathlibPath
 from datetime import datetime
 
+from Utils.Store import Store
 from Utils.Logging.Logging import Logging
 
 
 class Ewf(pytsk3.Img_Info):
-    def __init__(self, store):
+    def __init__(self,):
         self.logger = Logging(self.__class__.__name__).logger
-        self.store = store
+        self.store = Store().image_store
 
         setrecursionlimit(100000)
 
         self.image_handle = None
 
-        self.ext = PathlibPath(store.get_state()).suffix.lower()[1:]
+        self.ext = PathlibPath(self.store.get_state()).suffix.lower()[1:]
         self.block_size = 0
         self.search_result = None
         self.sha_sum = None
@@ -29,10 +30,10 @@ class Ewf(pytsk3.Img_Info):
         if self.ext == 'e01' or self.ext == 's01' or self.ext == 'ex01' or \
                 self.ext == 'l01' or self.ext == 'lx01':
             self.ewf_handle = pyewf.handle()
-            self.ewf_handle.open(pyewf.glob(store.get_state()))
+            self.ewf_handle.open(pyewf.glob(self.store.get_state()))
             self.logger.debug('EWF handle opened')
             self.logger.info('{} loaded with EWF'.format(
-                store.get_state().split(sep)[-1]))
+                self.store.get_state().split(sep)[-1]))
             super(Ewf, self).__init__(url='',
                                       type=pytsk3.TSK_IMG_TYPE_EXTERNAL)
 

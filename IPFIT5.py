@@ -1,83 +1,200 @@
-import curses
+from collections import defaultdict
 
-from os import sep
+from asciimatics.widgets import Frame, Layout, Label, Divider, CheckBox, \
+    RadioButtons, Button, PopUpDialog, Background
+from asciimatics.scene import Scene
+from asciimatics.screen import Screen
+from asciimatics.exceptions import ResizeScreenError, NextScene, \
+    StopApplication, InvalidFields
+import sys
+import logging
 
 from Utils.Store import Store
-from Utils.Logging.Logging import Logging
-from Utils.FilePicker import filepicker_main as image_filepicker
+from Utils.FilePicker import FilepickerFrame
 
-from Utils.Ewf import EwfInfoMenu
+# Initial data for the form
+form_data = {
+    "PA": False,
+    "FA": False,
+    "FB": False,
+    "FC": False,
+    "IA": False
+}
 
-from Utils.Menu import Menu
-from Files import FilesMenu
-from IP import IpMenu
-from Photos import PhotosMenu
-
-global_stores = Store()
+logging.basicConfig(filename="forms.log", level=logging.DEBUG)
 
 
-class MainApp(object):
-    def __init__(self, stdscreen):
-        self.logger = Logging(self.__class__.__name__).logger
+class MenuFrame(Frame):
+    def __init__(self, screen):
+        self.store = Store().image_store
+        self.image = self.store.get_state()
 
-        global global_stores
-        self.stores = global_stores
-        self.image_picker = None
-        self.image = None
-        self.screen = stdscreen
-        curses.curs_set(0)
+        super(MenuFrame, self).__init__(screen,
+                                        screen.height - 2,
+                                        screen.width - 2,
+                                        data=form_data,
+                                        has_shadow=True,
+                                        has_border=True,
+                                        can_scroll=False,
+                                        name="IPFIT5")
 
-        if self.stores.image_store.get_state() == 'initial' or \
-                self.stores.image_store.get_state() is None:
-            main_menu_items = [
-                ('Load image', self.filepicker)
-            ]
-        else:
-            self.files = FilesMenu.FilesMenu(self.stores.image_store)
+        self.store.subscribe(lambda: self.set_image())
 
-            self.submenu_files = Menu(self.files.menu(), self.screen)
-            self.submenu_ip = Menu(IpMenu.IpMenu.menu(), self.screen)
-            self.submenu_photos = Menu(PhotosMenu.PhotosMenu.menu(),
-                                       self.screen)
+        self.palette = defaultdict(lambda: (
+            Screen.COLOUR_WHITE, Screen.A_NORMAL, Screen.COLOUR_BLACK))
 
-            self.submenu_file_info = Menu(
-                EwfInfoMenu.menu(self.stores.image_store), self.screen,
-                info=True)
+        self.palette['focus_field'] = (
+            Screen.COLOUR_WHITE, Screen.A_NORMAL, Screen.COLOUR_BLACK)
 
-            main_menu_items = [
-                ('Load image (Selected image: {})'.format(
-                    self.stores.image_store.get_state().split(sep)[-1]),
-                 self.filepicker),
-                ('Image information', self.fileinfo),
-                ('Files (Owain van Brakel)', self.menu_files),
-                ('IP (Kasper van den Berg)', self.menu_ip),
-                ('Photos (Virgil Bron)', self.menu_photos)
-            ]
-        main_menu = Menu(main_menu_items, self.screen, sub=False)
-        main_menu.display()
+        self.palette['focus_button'] = (
+            Screen.COLOUR_BLACK, Screen.A_BOLD, Screen.COLOUR_WHITE)
 
-    def filepicker(self):
-        self.logger.debug('File picker opened')
-        image_filepicker(self.stores.image_store)
-        curses.wrapper(MainApp)
+        self.palette['selected_focus_field'] = (
+            Screen.COLOUR_BLACK, Screen.A_BOLD, Screen.COLOUR_WHITE)
 
-    def fileinfo(self):
-        self.logger.debug('File info menu opened')
-        self.submenu_file_info.display()
+        header = Layout([1])
+        self.add_layout(header)
 
-    def menu_files(self):
-        self.logger.debug('Files menu opened')
-        self.submenu_files.display()
+        header.add_widget(
+            Label(label="IPFIT5".center(screen.width - 4), height=1), 0)
+        header.add_widget(Label(
+            label="Virgil Bron | Owain van Brakel | Kasper van den Berg"
+                .center(screen.width - 4), height=3), 0)
 
-    def menu_ip(self):
-        self.logger.debug('Ip menu opened')
-        self.submenu_ip.display()
+        layout = Layout([1, 50, 1])
+        self.add_layout(layout)
 
-    def menu_photos(self):
-        self.logger.debug('Photos menu opened')
-        self.submenu_photos.display()
+        self.file_picker = RadioButtons([("Lorum ipsum", 1),
+                                        ("Lorum ipsum", 2),
+                                        (self.image, 3)],
+                                        label="Image:",
+                                        name="image",
+                                        on_change=self._on_change)
+
+        layout.add_widget(self.file_picker, 1)
+
+        layout.add_widget(Divider(height=3), 1)
+
+        layout.add_widget(Label("Photo's", height=2), 1)
+        layout.add_widget(CheckBox("Lorum ipsum",
+                                   label="",
+                                   name="PA",
+                                   on_change=self._on_change), 1)
+
+        layout.add_widget(Divider(height=3), 1)
+
+        layout.add_widget(Label("Files", height=2), 1)
+        layout.add_widget(CheckBox("Hashing",
+                                   label="",
+                                   name="FA",
+                                   on_change=self._on_change), 1)
+        layout.add_widget(CheckBox("Create timeline",
+                                   label="",
+                                   name="FB",
+                                   on_change=self._on_change), 1)
+        layout.add_widget(CheckBox("Detect language",
+                                   label="",
+                                   name="FC",
+                                   on_change=self._on_change), 1)
+
+        layout.add_widget(Divider(height=3), 1)
+
+        layout.add_widget(Label("IP", height=2), 1)
+        layout.add_widget(CheckBox("Lorem ipsum",
+                                   label="",
+                                   name="IA",
+                                   on_change=self._on_change), 1)
+
+        layout.add_widget(Divider(height=3), 1)
+
+        layout2 = Layout([1, 1])
+        self.add_layout(layout2)
+
+        layout2.add_widget(Button("View Data", self._view), 0)
+        layout2.add_widget(Button("Quit", self._quit), 1)
+
+        self.fix()
+
+    def set_image(self):
+        self.image = self.store.get_state()
+
+        self.file_picker = RadioButtons([("Lorum ipsum", 1),
+                      ("Lorum ipsum", 2),
+                      (self.image, 3)],
+                     label="Image:",
+                     name="image",
+                     on_change=self._on_change)
+
+        print(self.image)
+
+    def _on_change(self):
+        self.save()
+        for key, value in self.data.items():
+            if key not in form_data or form_data[key] != value:
+                if key == 'image' and value == 3:
+                    raise NextScene()
+                break
+
+    def _reset(self):
+        self.reset()
+        raise NextScene()
+
+    def _view(self):
+        # Build result of this form and display it.
+        try:
+            self.save(validate=True)
+            message = "Values entered are:\n\n"
+            for key, value in self.data.items():
+                message += "- {}: {}\n".format(key, value)
+
+            message += "- Selected: {}\n".format(self.store.get_state())
+        except InvalidFields as exc:
+            message = "The following fields are invalid:\n\n"
+            for field in exc.fields:
+                message += "- {}\n".format(field)
+        self._scene.add_effect(
+            PopUpDialog(self._screen, message, ["OK"]))
+
+    def _quit(self):
+        self._scene.add_effect(
+            PopUpDialog(self._screen,
+                        "Are you sure?",
+                        ["Yes", "No"],
+                        on_close=self._quit_on_yes))
+
+    @staticmethod
+    def _quit_on_yes(selected):
+        # Yes is the first button
+        if selected == 0:
+            raise StopApplication("User requested exit")
+
+
+def menu(screen, scene):
+    store = Store().image_store
+
+    main_scene = Scene([Background(screen), MenuFrame(screen)], -1)
+    file_picker_scene = Scene([Background(screen), FilepickerFrame(screen)], -1)
+
+    screen.play(
+        [main_scene, file_picker_scene],
+        stop_on_resize=False,
+        start_scene=scene
+    )
+
+
+def main():
+    global global_store
+    global_store = Store().image_store
+
+    last_scene = None
+
+    while True:
+        try:
+            Screen.wrapper(menu, catch_interrupt=False, arguments=[last_scene])
+            sys.exit(0)
+        except ResizeScreenError as e:
+            last_scene = e.scene
 
 
 if __name__ == '__main__':
-    Logging(__name__).logger.info('Application start')
-    curses.wrapper(MainApp)
+    main()
