@@ -6,7 +6,7 @@ from asciimatics.scene import Scene
 from asciimatics.screen import Screen
 from asciimatics.exceptions import ResizeScreenError, NextScene, \
     StopApplication
-from sys import exit
+from sys import exit as ExitApplication
 
 from pathlib import Path
 from Utils.Store import Store
@@ -293,7 +293,7 @@ def main():
     while True:
         try:
             Screen.wrapper(menu, catch_interrupt=False, arguments=[last_scene])
-            exit(0)
+            ExitApplication(0)
         except ResizeScreenError as e:
             last_scene = e.scene
 
