@@ -112,9 +112,9 @@ class Ewf(pytsk3.Img_Info):
         if vol is not None:
             for part in vol:
                 if part.len > 2048 and 'Unallocated' not in part.desc.decode(
-                        'UTF-8') and 'Extended' not in part.desc.decode(
-                    'UTF-8') and 'Primary Table' not in part.desc.decode(
-                    'UTF-8'):
+                    'UTF-8') and 'Extended' not in part.desc.decode(
+                        'UTF-8') and 'Primary Table' not in part.desc.decode(
+                        'UTF-8'):
                     try:
                         fs = pytsk3.FS_Info(
                             img, offset=part.start * vol.info.block_size)
@@ -185,9 +185,9 @@ class Ewf(pytsk3.Img_Info):
         if vol is not None:
             for part in vol:
                 if part.len > 2048 and 'Unallocated' not in part.desc.decode(
-                        'UTF-8') and 'Extended' not in part.desc.decode(
-                    'UTF-8') and 'Primary Table' not in part.desc.decode(
-                    'UTF-8'):
+                    'UTF-8') and 'Extended' not in part.desc.decode(
+                        'UTF-8') and 'Primary Table' not in part.desc.decode(
+                        'UTF-8'):
                     try:
                         fs = pytsk3.FS_Info(
                             img, offset=part.start * vol.info.block_size)
