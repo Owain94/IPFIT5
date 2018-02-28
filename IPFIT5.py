@@ -208,7 +208,7 @@ class MenuFrame(Frame):
 
     def view(self):
         self._scene.add_effect(
-            PopUpDialog(self._screen, str(self.store.get_state()), ["OK"]))
+            PopUpDialog(self._screen, str(self.store.get_state()), ['OK']))
 
     def quit(self):
         self._scene.add_effect(
