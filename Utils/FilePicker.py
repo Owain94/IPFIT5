@@ -28,15 +28,18 @@ class FilepickerFrame(Frame):
         header = Layout([1])
         self.add_layout(header)
 
-        header.add_widget(Label(label="IPFIT5".center(screen.width - 4), height=1), 0)
-        header.add_widget(Label(label="Virgil Bron | Owain van Brakel | Kasper van den Berg".center(screen.width - 4), height=3), 0)
+        header.add_widget(
+            Label(label="IPFIT5".center(screen.width - 4), height=1), 0)
+        header.add_widget(Label(label="Virgil Bron | Owain van Brakel | Kasper van den Berg".center(
+            screen.width - 4), height=3), 0)
 
         # Create the form layout...
         layout = Layout([1, 50, 1], fill_frame=True)
         self.add_layout(layout)
 
         # Now populate it with the widgets we want to use.
-        self._list = FileBrowser(Widget.FILL_FRAME, os.path.abspath('.'), name='mc_list', on_select=self.selected)
+        self._list = FileBrowser(Widget.FILL_FRAME, os.path.abspath(
+            '.'), name='mc_list', on_select=self.selected)
         layout.add_widget(Label('Image file picker'), 1)
         layout.add_widget(Divider(), 1)
         layout.add_widget(self._list, 1)

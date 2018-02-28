@@ -70,9 +70,11 @@ class Ewf(pytsk3.Img_Info):
         for part in volume:
             menu_items.append('- Partition address: {}'.format(part.addr))
             menu_items.append('- Partition start: {}'.format(part.start))
-            menu_items.append('- Partition length (relative): {}'.format(part.start + part.len - 1))
+            menu_items.append(
+                '- Partition length (relative): {}'.format(part.start + part.len - 1))
             menu_items.append('- Partition length: {}'.format(part.len))
-            menu_items.append('- Partition description: {}'.format(part.desc.decode('UTF-8')))
+            menu_items.append(
+                '- Partition description: {}'.format(part.desc.decode('UTF-8')))
             menu_items.append('')
 
         return menu_items
