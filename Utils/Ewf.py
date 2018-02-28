@@ -59,6 +59,24 @@ class Ewf(pytsk3.Img_Info):
         self.block_size = volume.info.block_size
         return volume
 
+    def volume_info(self):
+        volume = self.info()
+
+        menu_items = [
+            '- Amount of partitions: {}'.format(volume.info.part_count),
+            ''
+        ]
+
+        for part in volume:
+            menu_items.append('- Partition address: {}'.format(part.addr))
+            menu_items.append('- Partition start: {}'.format(part.start))
+            menu_items.append('- Partition length (relative): {}'.format(part.start + part.len - 1))
+            menu_items.append('- Partition length: {}'.format(part.len))
+            menu_items.append('- Partition description: {}'.format(part.desc.decode('UTF-8')))
+            menu_items.append('')
+
+        return menu_items
+
     @staticmethod
     def rreplace(s, old, new):
         return (s[::-1].replace(old[::-1], new[::-1], 1))[::-1]
@@ -255,30 +273,3 @@ class Ewf(pytsk3.Img_Info):
         if str(ts) == '0':
             return ''
         return datetime.utcfromtimestamp(ts)
-
-
-class EwfInfoMenu(object):
-    def __init__(self):
-        self.logger = Logging(self.__class__.__name__).logger
-
-    @staticmethod
-    def menu(store):
-        ewf = Ewf(store)
-        volume = ewf.info()
-
-        menu_items = [
-            ('Amount of partitions: {}'.format(volume.info.part_count), ''),
-            ('', '')]
-
-        for part in volume:
-            menu_items.append(('Partition address: {}'.format(part.addr), ''))
-            menu_items.append(('Partition start: {}'.format(part.start), ''))
-            menu_items.append(('Partition length (relative): {}'.format(
-                part.start + part.len - 1), ''))
-            menu_items.append(('Partition length: {}'.format(part.len), ''))
-            menu_items.append(('Partition description: {}'.format(
-                part.desc.decode('UTF-8')), ''))
-
-            menu_items.append(('', ''))
-
-        return menu_items
