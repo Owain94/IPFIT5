@@ -1,7 +1,8 @@
 import pydux
+from Utils.Singleton import Singleton
 
 
-class Store:
+class Store(metaclass=Singleton):
     def __init__(self):
         self.image_store = pydux.create_store(self.image)
 

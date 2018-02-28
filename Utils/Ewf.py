@@ -8,19 +8,20 @@ from sys import setrecursionlimit, exc_info
 from pathlib import Path as PathlibPath
 from datetime import datetime
 
+from Utils.Store import Store
 from Utils.Logging.Logging import Logging
 
 
 class Ewf(pytsk3.Img_Info):
-    def __init__(self, store):
+    def __init__(self, ):
         self.logger = Logging(self.__class__.__name__).logger
-        self.store = store
+        self.store = Store().image_store
 
         setrecursionlimit(100000)
 
         self.image_handle = None
 
-        self.ext = PathlibPath(store.get_state()).suffix.lower()[1:]
+        self.ext = PathlibPath(self.store.get_state()).suffix.lower()[1:]
         self.block_size = 0
         self.search_result = None
         self.sha_sum = None
@@ -29,10 +30,10 @@ class Ewf(pytsk3.Img_Info):
         if self.ext == 'e01' or self.ext == 's01' or self.ext == 'ex01' or \
                 self.ext == 'l01' or self.ext == 'lx01':
             self.ewf_handle = pyewf.handle()
-            self.ewf_handle.open(pyewf.glob(store.get_state()))
+            self.ewf_handle.open(pyewf.glob(self.store.get_state()))
             self.logger.debug('EWF handle opened')
             self.logger.info('{} loaded with EWF'.format(
-                store.get_state().split(sep)[-1]))
+                self.store.get_state().split(sep)[-1]))
             super(Ewf, self).__init__(url='',
                                       type=pytsk3.TSK_IMG_TYPE_EXTERNAL)
 
@@ -57,6 +58,28 @@ class Ewf(pytsk3.Img_Info):
 
         self.block_size = volume.info.block_size
         return volume
+
+    def volume_info(self):
+        volume = self.info()
+
+        menu_items = [
+            '- Amount of partitions: {}'.format(volume.info.part_count),
+            ''
+        ]
+
+        for part in volume:
+            menu_items.append('- Partition address: {}'.format(part.addr))
+            menu_items.append('- Partition start: {}'.format(part.start))
+            menu_items.append(
+                '- Partition length (relative): {}'.format(
+                    part.start + part.len - 1))
+            menu_items.append('- Partition length: {}'.format(part.len))
+            menu_items.append(
+                '- Partition description: {}'.format(
+                    part.desc.decode('UTF-8')))
+            menu_items.append('')
+
+        return menu_items
 
     @staticmethod
     def rreplace(s, old, new):
@@ -89,7 +112,7 @@ class Ewf(pytsk3.Img_Info):
         if vol is not None:
             for part in vol:
                 if part.len > 2048 and 'Unallocated' not in part.desc.decode(
-                        'UTF-8') and 'Extended' not in part.desc.decode(
+                    'UTF-8') and 'Extended' not in part.desc.decode(
                         'UTF-8') and 'Primary Table' not in part.desc.decode(
                         'UTF-8'):
                     try:
@@ -113,7 +136,7 @@ class Ewf(pytsk3.Img_Info):
         for fs_object in root:
             if not hasattr(fs_object, 'info') \
                     or not hasattr(fs_object.info, 'name') or not hasattr(
-                    fs_object.info.name, 'name') or \
+                fs_object.info.name, 'name') or \
                     fs_object.info.name.name.decode('UTF-8') in ['.', '..']:
                 continue
             try:
@@ -162,7 +185,7 @@ class Ewf(pytsk3.Img_Info):
         if vol is not None:
             for part in vol:
                 if part.len > 2048 and 'Unallocated' not in part.desc.decode(
-                        'UTF-8') and 'Extended' not in part.desc.decode(
+                    'UTF-8') and 'Extended' not in part.desc.decode(
                         'UTF-8') and 'Primary Table' not in part.desc.decode(
                         'UTF-8'):
                     try:
@@ -254,30 +277,3 @@ class Ewf(pytsk3.Img_Info):
         if str(ts) == '0':
             return ''
         return datetime.utcfromtimestamp(ts)
-
-
-class EwfInfoMenu(object):
-    def __init__(self):
-        self.logger = Logging(self.__class__.__name__).logger
-
-    @staticmethod
-    def menu(store):
-        ewf = Ewf(store)
-        volume = ewf.info()
-
-        menu_items = [
-            ('Amount of partitions: {}'.format(volume.info.part_count), ''),
-            ('', '')]
-
-        for part in volume:
-            menu_items.append(('Partition address: {}'.format(part.addr), ''))
-            menu_items.append(('Partition start: {}'.format(part.start), ''))
-            menu_items.append(('Partition length (relative): {}'.format(
-                part.start + part.len - 1), ''))
-            menu_items.append(('Partition length: {}'.format(part.len), ''))
-            menu_items.append(('Partition description: {}'.format(
-                part.desc.decode('UTF-8')), ''))
-
-            menu_items.append(('', ''))
-
-        return menu_items
