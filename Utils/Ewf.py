@@ -13,7 +13,7 @@ from Utils.Logging.Logging import Logging
 
 
 class Ewf(pytsk3.Img_Info):
-    def __init__(self,):
+    def __init__(self, ):
         self.logger = Logging(self.__class__.__name__).logger
         self.store = Store().image_store
 
@@ -71,10 +71,12 @@ class Ewf(pytsk3.Img_Info):
             menu_items.append('- Partition address: {}'.format(part.addr))
             menu_items.append('- Partition start: {}'.format(part.start))
             menu_items.append(
-                '- Partition length (relative): {}'.format(part.start + part.len - 1))
+                '- Partition length (relative): {}'.format(
+                    part.start + part.len - 1))
             menu_items.append('- Partition length: {}'.format(part.len))
             menu_items.append(
-                '- Partition description: {}'.format(part.desc.decode('UTF-8')))
+                '- Partition description: {}'.format(
+                    part.desc.decode('UTF-8')))
             menu_items.append('')
 
         return menu_items
@@ -111,8 +113,8 @@ class Ewf(pytsk3.Img_Info):
             for part in vol:
                 if part.len > 2048 and 'Unallocated' not in part.desc.decode(
                         'UTF-8') and 'Extended' not in part.desc.decode(
-                        'UTF-8') and 'Primary Table' not in part.desc.decode(
-                        'UTF-8'):
+                    'UTF-8') and 'Primary Table' not in part.desc.decode(
+                    'UTF-8'):
                     try:
                         fs = pytsk3.FS_Info(
                             img, offset=part.start * vol.info.block_size)
@@ -134,7 +136,7 @@ class Ewf(pytsk3.Img_Info):
         for fs_object in root:
             if not hasattr(fs_object, 'info') \
                     or not hasattr(fs_object.info, 'name') or not hasattr(
-                    fs_object.info.name, 'name') or \
+                fs_object.info.name, 'name') or \
                     fs_object.info.name.name.decode('UTF-8') in ['.', '..']:
                 continue
             try:
@@ -184,8 +186,8 @@ class Ewf(pytsk3.Img_Info):
             for part in vol:
                 if part.len > 2048 and 'Unallocated' not in part.desc.decode(
                         'UTF-8') and 'Extended' not in part.desc.decode(
-                        'UTF-8') and 'Primary Table' not in part.desc.decode(
-                        'UTF-8'):
+                    'UTF-8') and 'Primary Table' not in part.desc.decode(
+                    'UTF-8'):
                     try:
                         fs = pytsk3.FS_Info(
                             img, offset=part.start * vol.info.block_size)
