@@ -30,8 +30,10 @@ class FilepickerFrame(Frame):
 
         header.add_widget(
             Label(label="IPFIT5".center(screen.width - 4), height=1), 0)
-        header.add_widget(Label(label="Virgil Bron | Owain van Brakel | Kasper van den Berg".center(
-            screen.width - 4), height=3), 0)
+        header.add_widget(
+            Label(
+                label="Virgil Bron | Owain van Brakel | ""Kasper van den Berg"
+                .center(screen.width - 4), height=3), 0)
 
         # Create the form layout...
         layout = Layout([1, 50, 1], fill_frame=True)
