@@ -169,7 +169,8 @@ class MenuFrame(Frame):
 
     def on_change(self):
         self.save()
-        self.image_info_button.disabled = self.store.image_store.get_state() == 'initial'
+        self.image_info_button.disabled = \
+            self.store.image_store.get_state() == 'initial'
 
         cred_state = self.store.credential_store.get_state()
 
