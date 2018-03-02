@@ -8,7 +8,6 @@ from asciimatics.exceptions import ResizeScreenError, NextScene, \
     StopApplication
 from sys import exit as exit_application
 
-from pathlib import Path
 from Utils.Store import Store
 from Utils.FilePicker import FilepickerFrame
 
@@ -31,18 +30,8 @@ class MenuFrame(Frame):
             'IB': False
         }
 
-        self.store = Store().image_store
-        self.image = self.store.get_state()
-
-        settings = self.get_settings()
-
-        if settings is not None:
-            try:
-                self.form_data['DA'] = settings[0]
-                self.form_data['DB'] = settings[1]
-                self.form_data['DC'] = settings[2]
-            except IndexError:
-                pass
+        self.store = Store()
+        self.get_settings()
 
         super(MenuFrame, self).__init__(screen,
                                         screen.height - 2,
@@ -53,7 +42,7 @@ class MenuFrame(Frame):
                                         can_scroll=False,
                                         name='IPFIT5')
 
-        self.store.subscribe(lambda: self.set_image())
+        self.store.image_store.subscribe(lambda: self.set_image())
 
         self.palette = defaultdict(lambda: (
             Screen.COLOUR_WHITE, Screen.A_NORMAL, Screen.COLOUR_BLACK))
@@ -110,8 +99,6 @@ class MenuFrame(Frame):
 
         details_save_layout = Layout([1, 50, 1])
         self.add_layout(details_save_layout)
-
-        details_save_layout.add_widget(Button('Save', self.save_details), 1)
 
         image_layout = Layout([1, 50, 1])
         self.add_layout(image_layout)
@@ -176,13 +163,29 @@ class MenuFrame(Frame):
         self.fix()
 
     def set_image(self):
-        self.form_data['IA'] = self.store.get_state()
+        self.form_data['IA'] = self.store.image_store.get_state()
         self.image_info_button.disabled = False
         self.save()
 
     def on_change(self):
         self.save()
-        self.image_info_button.disabled = self.store.get_state() == 'initial'
+        self.image_info_button.disabled = \
+            self.store.image_store.get_state() == 'initial'
+
+        cred_state = self.store.credential_store.get_state()
+
+        if self.data.get('DA') != cred_state['name'] or \
+                self.data.get('DB') != cred_state['location'] or \
+                self.data.get('DC') != cred_state['case']:
+            self.store.credential_store.dispatch(
+                {
+                    'type': 'set_credentials',
+                    'credentials': {
+                        'name': self.data.get('DA'),
+                        'case': self.data.get('DB'),
+                        'location': self.data.get('DC'),
+                    }
+                })
 
     def file_picker(self):
         raise NextScene()
@@ -199,20 +202,10 @@ class MenuFrame(Frame):
             PopUpDialog(self._screen,
                         '\n'.join([*metadata, *volume_information]), ['OK']))
 
-    def save_details(self):
-        data = [
-            self.data.get('DA'),
-            self.data.get('DB'),
-            self.data.get('DC')
-        ]
-        self.save_settings(data)
-
-        self._scene.add_effect(
-            PopUpDialog(self._screen, 'Settings saved!', ['OK']))
-
     def view(self):
         self._scene.add_effect(
-            PopUpDialog(self._screen, str(self.store.get_state()), ['OK']))
+            PopUpDialog(self._screen, str(self.store.image_store.get_state()),
+                        ['OK']))
 
     def quit(self):
         self._scene.add_effect(
@@ -253,30 +246,12 @@ class MenuFrame(Frame):
         if self.data.get('FA', None):
             Files().get_hashes()
 
-    @staticmethod
-    def get_settings():
-        if not Path('settings').is_file():
-            return None
+    def get_settings(self):
+        settings = self.store.credential_store.get_state()
 
-        data = []
-
-        with open('settings') as f:
-            for line in f.readlines():
-                data.append(line.strip('\n'))
-
-        return data
-
-    @staticmethod
-    def save_settings(data):
-        write_data = []
-        for item in data:
-            if item is not None:
-                write_data.append(item)
-            else:
-                write_data.append('')
-
-        with open('settings', 'w') as f:
-            f.write('\n'.join(write_data))
+        self.form_data['DA'] = settings['name']
+        self.form_data['DB'] = settings['location']
+        self.form_data['DC'] = settings['case']
 
     @staticmethod
     def quit_on_yes(selected):
