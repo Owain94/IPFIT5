@@ -8,6 +8,10 @@ class Store(metaclass=Singleton):
     def __init__(self):
         self.image_store = pydux.create_store(self.image)
         self.credential_store = pydux.create_store(self.credential)
+        self.credential_store.subscribe(lambda: Store.write_config_to_disk(
+            Store.get_config_save_path("credentials"),
+            self.credential_store.get_state()
+        ))
 
     @staticmethod
     def get_config_save_path(type: str) -> Path:
