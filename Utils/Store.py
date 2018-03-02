@@ -36,7 +36,8 @@ class Store(metaclass=Singleton):
     def write_config_to_disk(path: Path, config: dict) -> None:
         with open(path, 'w') as file:
             file.writelines(
-                linesep.join([str(x) + ":" + str(y) for x, y in config.items()])
+                linesep.join([str(x) + ":" + str(y)
+                              for x, y in config.items()])
             )
 
     @staticmethod
