@@ -121,7 +121,7 @@ class Ewf(pytsk3.Img_Info):
     @staticmethod
     def encase_image(ext):
         return ext == 'e01' or ext == 's01' or ext == 'ex01' \
-               or ext == 'l01' or ext == 'lx01'
+            or ext == 'l01' or ext == 'lx01'
 
     @staticmethod
     def rreplace(s, old, new):
@@ -177,9 +177,9 @@ class Ewf(pytsk3.Img_Info):
     @staticmethod
     def nameless_dir(fs_object):
         return not hasattr(fs_object, 'info') \
-               or not hasattr(fs_object.info, 'name') or not hasattr(
+            or not hasattr(fs_object.info, 'name') or not hasattr(
             fs_object.info.name, 'name') or \
-               fs_object.info.name.name.decode('UTF-8') in ['.', '..']
+            fs_object.info.name.name.decode('UTF-8') in ['.', '..']
 
     def single_file(self, partition, path, filename, hashing=False):
         vol, img = self.get_handle()
