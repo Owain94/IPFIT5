@@ -19,11 +19,11 @@ class Files:
         return data
 
     def get_hash(self, file, shared_list):
-        sha_sum = self.ewf.hash_file(
-            file[1], Ewf.rreplace(file[8], file[1], ''))
+        sha_sum = self.ewf.single_file(int(file[0][-1]),
+                                       Ewf.rreplace(file[8], file[1], ''),
+                                       file[1], True)
 
         file.append(sha_sum)
-
         shared_list.append(file)
 
     def get_hashes(self):
