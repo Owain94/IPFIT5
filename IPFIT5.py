@@ -8,7 +8,6 @@ from asciimatics.exceptions import ResizeScreenError, NextScene, \
     StopApplication
 from sys import exit as exit_application
 
-from pathlib import Path
 from Utils.Store import Store
 from Utils.FilePicker import FilepickerFrame
 
@@ -32,7 +31,7 @@ class MenuFrame(Frame):
         }
 
         self.store = Store()
-
+        self.get_settings()
 
         super(MenuFrame, self).__init__(screen,
                                         screen.height - 2,
