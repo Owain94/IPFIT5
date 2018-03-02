@@ -1,18 +1,20 @@
 from collections import defaultdict
 
-from asciimatics.widgets import Frame, TextBox, Layout, Label, Divider, \
+from asciimatics.widgets import Frame, Text, TextBox, Layout, Label, Divider, \
     CheckBox, Button, PopUpDialog
 from asciimatics.scene import Scene
 from asciimatics.screen import Screen
 from asciimatics.exceptions import ResizeScreenError, NextScene, \
     StopApplication
-from sys import exit as ExitApplication
+from sys import exit as exit_application
 
 from pathlib import Path
 from Utils.Store import Store
 from Utils.FilePicker import FilepickerFrame
 
 from Utils.Ewf import Ewf
+
+from Files.Files import Files
 
 
 class MenuFrame(Frame):
@@ -36,9 +38,9 @@ class MenuFrame(Frame):
 
         if settings is not None:
             try:
-                self.form_data['DA'] = [settings[0]]
-                self.form_data['DB'] = [settings[1]]
-                self.form_data['DC'] = [settings[2]]
+                self.form_data['DA'] = settings[0]
+                self.form_data['DB'] = settings[1]
+                self.form_data['DC'] = settings[2]
             except IndexError:
                 pass
 
@@ -68,7 +70,7 @@ class MenuFrame(Frame):
         self.palette['disabled'] = (
             Screen.COLOUR_BLACK, Screen.A_BOLD, Screen.COLOUR_BLACK)
 
-        self.image_label = TextBox(height=1,
+        self.image_label = TextBox(height=2,
                                    as_string=True,
                                    label='Image:',
                                    name='IA')
@@ -95,19 +97,16 @@ class MenuFrame(Frame):
 
         details_layout.add_widget(Divider(height=3), 1)
 
-        details_layout.add_widget(Label('Settings', height=2), 1)
-        details_layout.add_widget(TextBox(height=1,
-                                          label='Name:',
-                                          name='DA',
-                                          on_change=self.on_change), 1)
-        details_layout.add_widget(TextBox(height=1,
-                                          label='Location:',
-                                          name='DB',
-                                          on_change=self.on_change), 1)
-        details_layout.add_widget(TextBox(height=1,
-                                          label='Case:',
-                                          name='DC',
-                                          on_change=self.on_change), 1)
+        details_layout.add_widget(Label(label='Settings', height=2), 1)
+        details_layout.add_widget(Text(label='Name:',
+                                       name='DA',
+                                       on_change=self.on_change), 1)
+        details_layout.add_widget(Text(label='Location:',
+                                       name='DB',
+                                       on_change=self.on_change), 1)
+        details_layout.add_widget(Text(label='Case:',
+                                       name='DC',
+                                       on_change=self.on_change), 1)
 
         details_save_layout = Layout([1, 50, 1])
         self.add_layout(details_save_layout)
@@ -161,7 +160,7 @@ class MenuFrame(Frame):
         ip_layout = Layout([1, 50, 1])
         self.add_layout(ip_layout)
 
-        ip_layout.add_widget(Label('IP', height=2), 1)
+        ip_layout.add_widget(Label(label='IP', height=2), 1)
         ip_layout.add_widget(CheckBox('Lorem ipsum',
                                       label='',
                                       name='IB',
@@ -190,10 +189,15 @@ class MenuFrame(Frame):
 
     def file_info(self):
         ewf = Ewf()
-        ewf.volume_info()
+        metadata = ewf.encase_metadata()
+        volume_information = ewf.volume_info()
+
+        if len(metadata) > 0:
+            metadata.append('')
 
         self._scene.add_effect(
-            PopUpDialog(self._screen, '\n'.join(ewf.volume_info()), ['OK']))
+            PopUpDialog(self._screen,
+                        '\n'.join([*metadata, *volume_information]), ['OK']))
 
     def save_details(self):
         data = [
@@ -242,6 +246,13 @@ class MenuFrame(Frame):
                 PopUpDialog(self._screen, '\n'.join(msg), ['OK']))
             return
 
+        self.exec()
+
+    def exec(self):
+        # Files -- hashing
+        if self.data.get('FA', None):
+            Files().get_hashes()
+
     @staticmethod
     def get_settings():
         if not Path('settings').is_file():
@@ -260,7 +271,7 @@ class MenuFrame(Frame):
         write_data = []
         for item in data:
             if item is not None:
-                write_data.append(item[0])
+                write_data.append(item)
             else:
                 write_data.append('')
 
@@ -293,7 +304,7 @@ def main():
     while True:
         try:
             Screen.wrapper(menu, catch_interrupt=False, arguments=[last_scene])
-            ExitApplication(0)
+            exit_application(0)
         except ResizeScreenError as e:
             last_scene = e.scene
 

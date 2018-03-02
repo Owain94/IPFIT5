@@ -129,12 +129,14 @@ class Ewf(pytsk3.Img_Info):
 
     @staticmethod
     def partition_check(part):
+        tables_to_ignore = ['Unallocated', 'Extended', 'Primary Table']
         decoded = part.desc.decode('UTF-8')
 
-        return part.len > 2048 and \
-            'Unallocated' not in decoded and \
-            'Extended' not in decoded and \
-            'Primary Table' not in decoded
+        return part.len > 2048 and not any(
+            table for
+            table in tables_to_ignore
+            if table in decoded
+        )
 
     def get_handle(self):
         vol = self.info()
