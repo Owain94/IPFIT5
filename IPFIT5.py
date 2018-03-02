@@ -253,7 +253,6 @@ class MenuFrame(Frame):
         if self.data.get('FA', None):
             Files().get_hashes()
 
-
     @staticmethod
     def get_settings():
         if not Path('settings').is_file():

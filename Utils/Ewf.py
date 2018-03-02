@@ -133,9 +133,9 @@ class Ewf(pytsk3.Img_Info):
         decoded = part.desc.decode('UTF-8')
 
         return part.len > 2048 and not any(
-                table for
-                table in tables_to_ignore
-                if table in decoded
+            table for
+            table in tables_to_ignore
+            if table in decoded
         )
 
     def get_handle(self):
