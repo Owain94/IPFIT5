@@ -6,7 +6,7 @@ from asciimatics.scene import Scene
 from asciimatics.screen import Screen
 from asciimatics.exceptions import ResizeScreenError, NextScene, \
     StopApplication
-from sys import exit
+from sys import exit as ExitApplication
 
 from pathlib import Path
 from Utils.Store import Store
@@ -208,7 +208,7 @@ class MenuFrame(Frame):
 
     def view(self):
         self._scene.add_effect(
-            PopUpDialog(self._screen, str(self.store.get_state()), ["OK"]))
+            PopUpDialog(self._screen, str(self.store.get_state()), ['OK']))
 
     def quit(self):
         self._scene.add_effect(
@@ -293,7 +293,7 @@ def main():
     while True:
         try:
             Screen.wrapper(menu, catch_interrupt=False, arguments=[last_scene])
-            exit(0)
+            ExitApplication(0)
         except ResizeScreenError as e:
             last_scene = e.scene
 
