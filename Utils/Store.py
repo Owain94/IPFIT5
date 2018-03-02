@@ -21,13 +21,13 @@ class Store(metaclass=Singleton):
         )
 
     @staticmethod
-    def get_config_save_path(type: str) -> Path:
+    def get_config_save_path(config: str) -> Path:
         # Make config folder
         config_path = Path(__file__).parent.parent.joinpath('Configs')
         Path.mkdir(Path(config_path), exist_ok=True)
 
         # Make config file
-        config_file_path = Path(config_path.joinpath("{0}.cfg".format(type)))
+        config_file_path = Path(config_path.joinpath("{0}.cfg".format(config)))
         Path.touch(config_file_path, exist_ok=True)
 
         return config_file_path
