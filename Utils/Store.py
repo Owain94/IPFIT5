@@ -1,4 +1,6 @@
 import pydux
+
+from Utils.Debounce import debounce
 from Utils.Singleton import Singleton
 from pathlib import Path
 from os import sep
@@ -8,10 +10,15 @@ class Store(metaclass=Singleton):
     def __init__(self):
         self.image_store = pydux.create_store(self.image)
         self.credential_store = pydux.create_store(self.credential)
-        self.credential_store.subscribe(lambda: Store.write_config_to_disk(
+
+        self.credential_store.subscribe(self.credentials_changed)
+
+    @debounce(0.25)
+    def credentials_changed(self):
+        self.write_config_to_disk(
             Store.get_config_save_path("credentials"),
             self.credential_store.get_state()
-        ))
+        )
 
     @staticmethod
     def get_config_save_path(type: str) -> Path:
