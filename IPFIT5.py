@@ -79,7 +79,7 @@ class MenuFrame(Frame):
             Label(label='IPFIT5'.center(self.screen.width - 4), height=1), 0)
         header.add_widget(Label(
             label='Virgil Bron | Owain van Brakel | Kasper van den Berg'
-                .center(self.screen.width - 4), height=1), 0)
+            .center(self.screen.width - 4), height=1), 0)
 
         details_layout = Layout([1, 50, 1])
         self.add_layout(details_layout)
