@@ -5,16 +5,18 @@ from Utils.Singleton import Singleton
 from pathlib import Path
 from os import linesep
 
+from typing import Dict, Union
+
 
 class Store(metaclass=Singleton):
-    def __init__(self):
+    def __init__(self) -> None:
         self.image_store = pydux.create_store(self.image)
         self.credential_store = pydux.create_store(self.credential)
 
         self.credential_store.subscribe(self.credentials_changed)
 
     @debounce(0.25)
-    def credentials_changed(self):
+    def credentials_changed(self) -> None:
         self.write_config_to_disk(
             Store.get_config_save_path("credentials"),
             self.credential_store.get_state()
@@ -33,7 +35,7 @@ class Store(metaclass=Singleton):
         return config_file_path
 
     @staticmethod
-    def write_config_to_disk(path: Path, config: dict) -> None:
+    def write_config_to_disk(path: Path, config: Dict[str, str]) -> None:
         with open(path, 'w') as file:
             file.writelines(
                 linesep.join([str(x) + ":" + str(y)
@@ -41,7 +43,8 @@ class Store(metaclass=Singleton):
             )
 
     @staticmethod
-    def read_config_from_disk(path: Path, defaults: dict) -> dict:
+    def read_config_from_disk(path: Path, defaults: Dict[str, str]) -> \
+            Dict[str, str]:
         with open(path, 'r') as file:
             lines = {
                 split_line[0]: ":".join(split_line[1::]) for split_line in
@@ -55,7 +58,9 @@ class Store(metaclass=Singleton):
         return defaults
 
     @staticmethod
-    def credential(state: str, action: [str, str]) -> dict:
+    def credential(state: Dict[str, str],
+                   action: Dict[str, Union[Dict[str, str], str]]) \
+            -> Dict[str, str]:
         if state is None:
             state = Store.read_config_from_disk(
                 Store.get_config_save_path('credentials'),
@@ -88,7 +93,7 @@ class Store(metaclass=Singleton):
         return state
 
     @staticmethod
-    def image(state, action):
+    def image(state: str, action: Dict[str, str]) -> str:
         if state is None:
             state = 'initial'
         if action is None:
