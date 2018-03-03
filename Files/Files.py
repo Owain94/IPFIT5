@@ -1,7 +1,10 @@
 from Utils.Logging.Logging import Logging
 from Utils.Ewf import Ewf
 
+from datetime import datetime
 from multiprocessing import Process, Manager
+
+from typing import List, Union
 
 import csv
 
@@ -12,13 +15,14 @@ class Files:
         self.ewf = Ewf()
         self.data = []
 
-    def get_files(self):
+    def get_files(self) -> List[List[Union[str, datetime]]]:
         data = self.ewf.files()
         self.write_csv(data, 'test.csv')
 
         return data
 
-    def get_hash(self, file, shared_list):
+    def get_hash(self, file: List[Union[str, datetime]], shared_list: List) \
+            -> None:
         sha_sum = self.ewf.single_file(int(file[0][-1]),
                                        Ewf.rreplace(file[8], file[1], ''),
                                        file[1], True)
@@ -26,7 +30,7 @@ class Files:
         file.append(sha_sum)
         shared_list.append(file)
 
-    def get_hashes(self):
+    def get_hashes(self) -> None:
         data = self.get_files()
 
         self.write_csv(data, 'test.csv')
@@ -48,7 +52,7 @@ class Files:
         self.write_csv([lst], 'test.csv')
 
     @staticmethod
-    def write_csv(data, output):
+    def write_csv(data: List[List[Union[str, datetime]]], output: str) -> None:
         if not data:
             return
 
