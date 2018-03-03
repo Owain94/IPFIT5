@@ -215,7 +215,8 @@ class Ewf(pytsk3.Img_Info):
 
         return None
 
-    def files(self, search_str: str = None) -> List[List[Union[str, datetime]]]:
+    def files(self, search_str: str = None) -> \
+            List[List[Union[str, datetime]]]:
         vol, img = self.get_handle()
         recursed_data = []
 
