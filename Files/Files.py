@@ -2,8 +2,7 @@ from Utils.Logging.Logging import Logging
 from Utils.Ewf import Ewf
 
 from datetime import datetime
-from functools import partial
-from multiprocessing import Process, Manager, Pool, cpu_count
+from multiprocessing import Process, Manager
 
 from typing import List, Union
 
