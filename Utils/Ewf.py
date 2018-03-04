@@ -32,7 +32,8 @@ class Ewf(pytsk3.Img_Info):
             self.ewf_handle.open(pyewf.glob(self.store.get_state()))
             self.logger.debug('EWF handle opened')
             self.logger.info('{} loaded with EWF'.format(
-                self.store.get_state().split(sep)[-1]))
+                self.store.get_state().split(sep)[-1])
+            )
             # noinspection PyArgumentList
             super(Ewf, self).__init__(url='',
                                       type=pytsk3.TSK_IMG_TYPE_EXTERNAL)
@@ -42,8 +43,8 @@ class Ewf(pytsk3.Img_Info):
         self.ewf_handle.close()
 
     def check_file_path(self) -> bool:
-        my_file = PathlibPath(self.store.get_state())
-        return my_file.is_file()
+        image_path = PathlibPath(self.store.get_state())
+        return image_path.is_file()
 
     def check_file(self) -> bool:
         try:
@@ -54,13 +55,10 @@ class Ewf(pytsk3.Img_Info):
 
     def info(self):
         if self.encase_image(self.ext):
-            volume = pytsk3.Volume_Info(self)
-        else:
-            # noinspection PyArgumentList
-            self.image_handle = pytsk3.Img_Info(url=self.store.get_state())
-            volume = pytsk3.Volume_Info(self.image_handle)
-
-        return volume
+            return pytsk3.Volume_Info(self)
+        # noinspection PyArgumentList
+        self.image_handle = pytsk3.Img_Info(url=self.store.get_state())
+        return pytsk3.Volume_Info(self.image_handle)
 
     def encase_metadata(self) -> Union[List, List[Union[str, str]]]:
         if not self.encase_image(self.ext):
@@ -97,11 +95,11 @@ class Ewf(pytsk3.Img_Info):
         volume_info = [
             'Volume information',
             '',
-            '- Amount of partitions: {}'.format(volume.info.part_count),
-            ''
+            '- Amount of partitions: {}'.format(volume.info.part_count)
         ]
 
         for part in volume:
+            volume_info.append('')
             volume_info.append('- Partition address: {}'.format(part.addr))
             volume_info.append('- Partition start: {}'.format(part.start))
             volume_info.append(
@@ -111,9 +109,8 @@ class Ewf(pytsk3.Img_Info):
             volume_info.append(
                 '- Partition description: {}'.format(
                     part.desc.decode('UTF-8')))
-            volume_info.append('')
 
-        return volume_info[:-1]
+        return volume_info
 
     @staticmethod
     def encase_image(ext: str) -> bool:
@@ -136,13 +133,8 @@ class Ewf(pytsk3.Img_Info):
         )
 
     def get_handle(self) -> Tuple[pytsk3.Volume_Info, pytsk3.Img_Info]:
-        vol = self.info()
-        if self.encase_image(self.ext):
-            img = self
-        else:
-            img = self.image_handle
-
-        return vol, img
+        return self.info(), \
+               self if self.encase_image(self.ext) else self.image_handle
 
     @staticmethod
     def open_fs_single_vol(img: pytsk3.Img_Info, path: str) -> \
@@ -205,11 +197,8 @@ class Ewf(pytsk3.Img_Info):
                     file_name = fs_object.info.name.name.decode('UTF-8')
 
                     if file_name.lower() == filename.lower():
-                        if hashing:
-                            return self.hash_file(fs_object)
-                        else:
-                            return fs_object
-
+                        return self.hash_file(fs_object) if hashing else \
+                            fs_object
                 except IOError:
                     pass
 
@@ -261,14 +250,13 @@ class Ewf(pytsk3.Img_Info):
                         file_ext = ''
                     else:
                         f_type = 'FILE'
-                        if '.' in file_name:
-                            file_ext = file_name.rsplit('.')[-1].lower()
-                        else:
-                            file_ext = ''
+                        file_ext = file_name.rsplit('.')[-1].lower() \
+                            if '.' in file_name else ''
                 except AttributeError:
                     continue
 
-                if search_str is None or search(search_str, file_name,
+                if search_str is None or search(search_str,
+                                                file_name,
                                                 I) is not None:
                     size = fs_object.info.meta.size
                     create = self.convert_time(fs_object.info.meta.crtime)
@@ -315,6 +303,4 @@ class Ewf(pytsk3.Img_Info):
 
     @staticmethod
     def convert_time(ts: float) -> Union[str, datetime]:
-        if str(ts) == '0':
-            return ''
-        return datetime.utcfromtimestamp(ts)
+        return '' if str(ts) == '0' else datetime.utcfromtimestamp(ts)
