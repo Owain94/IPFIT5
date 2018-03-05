@@ -8,8 +8,12 @@ from asciimatics.exceptions import ResizeScreenError, NextScene, \
     StopApplication
 from sys import exit as exit_application
 
-from Utils.Store import Store
+from Utils.Store.Image import ImageStore
+from Utils.Store.Credentials import CredentialStore
 from Utils.FilePicker import FilepickerFrame
+
+from Utils.Store.Actions.ImageStoreActions import ImageStoreActions
+from Utils.Store.Actions.CredentialsStoreActions import CredentialsStoreActions
 
 from Utils.Ewf import Ewf
 
@@ -30,7 +34,9 @@ class MenuFrame(Frame):
             'IB': False
         }
 
-        self.store = Store()
+        self.ewf = Ewf()
+        self.image_store = ImageStore().image_store
+        self.credentials_store = CredentialStore().credential_store
         self.get_settings()
 
         super(MenuFrame, self).__init__(screen,
@@ -42,7 +48,7 @@ class MenuFrame(Frame):
                                         can_scroll=False,
                                         name='IPFIT5')
 
-        self.store.image_store.subscribe(lambda: self.set_image())
+        self.image_store.subscribe(lambda: self.set_image())
 
         self.palette = defaultdict(lambda: (
             Screen.COLOUR_WHITE, Screen.A_NORMAL, Screen.COLOUR_BLACK))
@@ -163,37 +169,44 @@ class MenuFrame(Frame):
         self.fix()
 
     def set_image(self):
-        self.form_data['IA'] = self.store.image_store.get_state()
-        self.image_info_button.disabled = False
+        if self.image_store.get_state() == 'initial':
+            return
+
+        if self.ewf.check_file():
+            self.form_data['IA'] = self.image_store.get_state()
+            self.image_info_button.disabled = False
+        else:
+            self.image_store.dispatch(ImageStoreActions.reset_state())
+            self.image_info_button.disabled = True
+            self._scene.add_effect(
+                PopUpDialog(self._screen, 'Could not read image!', ['OK']))
+
         self.save()
 
     def on_change(self):
         self.save()
         self.image_info_button.disabled = \
-            self.store.image_store.get_state() == 'initial'
+            self.image_store.get_state() == 'initial'
 
-        cred_state = self.store.credential_store.get_state()
+        cred_state = self.credentials_store.get_state()
 
         if self.data.get('DA') != cred_state['name'] or \
                 self.data.get('DB') != cred_state['location'] or \
                 self.data.get('DC') != cred_state['case']:
-            self.store.credential_store.dispatch(
-                {
-                    'type': 'set_credentials',
-                    'credentials': {
-                        'name': self.data.get('DA'),
-                        'case': self.data.get('DB'),
-                        'location': self.data.get('DC'),
-                    }
-                })
+            self.credentials_store.dispatch(
+                CredentialsStoreActions.set_credentials(
+                    self.data.get('DA'),
+                    self.data.get('DB'),
+                    self.data.get('DC')
+                )
+            )
 
     def file_picker(self):
         raise NextScene()
 
     def file_info(self):
-        ewf = Ewf()
-        metadata = ewf.encase_metadata()
-        volume_information = ewf.volume_info()
+        metadata = self.ewf.encase_metadata()
+        volume_information = self.ewf.volume_info()
 
         if len(metadata) > 0:
             metadata.append('')
@@ -201,11 +214,6 @@ class MenuFrame(Frame):
         self._scene.add_effect(
             PopUpDialog(self._screen,
                         '\n'.join([*metadata, *volume_information]), ['OK']))
-
-    def view(self):
-        self._scene.add_effect(
-            PopUpDialog(self._screen, str(self.store.image_store.get_state()),
-                        ['OK']))
 
     def quit(self):
         self._scene.add_effect(
@@ -231,7 +239,8 @@ class MenuFrame(Frame):
         if case is None or len(case[0]) is 0:
             msg.append('Case can not be empty')
 
-        if image is None or len(case[0]) is 0:
+        if image is None or len(case[0]) is 0 or self.image_store.get_state() \
+                == 'initial':
             msg.append('No image selected')
 
         if len(msg) > 0:
@@ -247,7 +256,7 @@ class MenuFrame(Frame):
             Files().get_hashes()
 
     def get_settings(self):
-        settings = self.store.credential_store.get_state()
+        settings = self.credentials_store.get_state()
 
         self.form_data['DA'] = settings['name']
         self.form_data['DB'] = settings['location']

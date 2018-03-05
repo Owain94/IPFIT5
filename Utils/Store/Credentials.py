@@ -1,31 +1,31 @@
-import pydux
+from pydux import create_store
+
+from pathlib import Path
+from os import linesep
 
 from Utils.Debounce import debounce
 from Utils.Singleton import Singleton
-from pathlib import Path
-from os import linesep
+from Utils.Store.Actions.CredentialsStoreActions import CredentialsStoreActions
 
 from typing import Dict, Union
 
 
-class Store(metaclass=Singleton):
+class CredentialStore(metaclass=Singleton):
     def __init__(self) -> None:
-        self.image_store = pydux.create_store(self.image)
-        self.credential_store = pydux.create_store(self.credential)
-
+        self.credential_store = create_store(self.credentials)
         self.credential_store.subscribe(self.credentials_changed)
 
     @debounce(0.25)
     def credentials_changed(self) -> None:
         self.write_config_to_disk(
-            Store.get_config_save_path("credentials"),
+            CredentialStore.get_config_save_path("credentials"),
             self.credential_store.get_state()
         )
 
     @staticmethod
     def get_config_save_path(config: str) -> Path:
         # Make config folder
-        config_path = Path(__file__).parent.parent.joinpath('Configs')
+        config_path = Path(__file__).parent.parent.parent.joinpath('Configs')
         Path.mkdir(Path(config_path), exist_ok=True)
 
         # Make config file
@@ -58,12 +58,12 @@ class Store(metaclass=Singleton):
         return defaults
 
     @staticmethod
-    def credential(state: Dict[str, str],
-                   action: Dict[str, Union[Dict[str, str], str]]) \
+    def credentials(state: Dict[str, str],
+                    action: Dict[str, Union[Dict[str, str], str]]) \
             -> Dict[str, str]:
         if state is None:
-            state = Store.read_config_from_disk(
-                Store.get_config_save_path('credentials'),
+            state = CredentialStore.read_config_from_disk(
+                CredentialStore.get_config_save_path('credentials'),
                 {
                     'name': '',
                     'location': '',
@@ -71,41 +71,21 @@ class Store(metaclass=Singleton):
                 }
             )
 
-        if action is None:
-            return state
-        elif action['type'] == 'set_credentials':
+        if action.get('type') == CredentialsStoreActions.SET_CREDENTIALS:
             state = {
-                'name': action['credentials']['name'],
-                'location': action['credentials']['location'],
-                'case': action['credentials']['case'],
+                'name': action.get('credentials').get('name'),
+                'location': action.get('credentials').get('location'),
+                'case': action.get('credentials').get('case'),
             }
-        elif action['type'] == 'set_location':
-            state['location'] = action['location']
-        elif action['type'] == 'set_name':
-            state['location'] = action['name']
-        elif action['type'] == 'set_case':
-            state['case'] = action['case']
-        elif action['type'] == 'save_to_disk':
-            Store.write_config_to_disk(
-                Store.get_config_save_path("credentials"),
+        elif action.get('type') == CredentialsStoreActions.SET_LOCATION:
+            state['location'] = action.get('location')
+        elif action.get('type') == CredentialsStoreActions.SET_NAME:
+            state['location'] = action.get('name')
+        elif action.get('type') == CredentialsStoreActions.SET_CASE:
+            state['case'] = action.get('case')
+        elif action.get('type') == CredentialsStoreActions.SAVE_TO_DISK:
+            CredentialStore.write_config_to_disk(
+                CredentialStore.get_config_save_path("credentials"),
                 state
             )
         return state
-
-    @staticmethod
-    def image(state: str, action: Dict[str, str]) -> str:
-        if state is None:
-            state = 'initial'
-        if action is None:
-            return state
-        elif action['type'] == 'set_image':
-            state = action['image']
-        return state
-
-
-if __name__ == '__main__':
-    stores = Store()
-
-    print(stores.credential_store.get_state())
-
-    stores.credential_store.dispatch({'type': 'save_to_disk'})

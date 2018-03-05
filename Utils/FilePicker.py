@@ -7,8 +7,9 @@ from asciimatics.widgets import Frame, Layout, FileBrowser, Widget, Label, \
 from asciimatics.screen import Screen
 from asciimatics.exceptions import NextScene
 
-from Utils.Store import Store
+from Utils.Store.Image import ImageStore
 from Utils.Logging.Logging import Logging
+from Utils.Store.Actions.ImageStoreActions import ImageStoreActions
 
 
 class FilepickerFrame(Frame):
@@ -23,7 +24,7 @@ class FilepickerFrame(Frame):
                                               can_scroll=False,
                                               name='Filepicker')
 
-        self.store = Store().image_store
+        self.store = ImageStore().image_store
 
         header = Layout([1])
         self.add_layout(header)
@@ -62,6 +63,6 @@ class FilepickerFrame(Frame):
 
     def selected(self):
         # Just confirm whenever the user actually selects something.
-        self.store.dispatch({'type': 'set_image', 'image': self._list.value})
+        self.store.dispatch(ImageStoreActions.set_image(self._list.value))
         # self.logger.info('Image selected: {}'.format(self._list.value))
         raise NextScene()
