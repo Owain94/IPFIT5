@@ -12,6 +12,7 @@ from Utils.Store.Image import ImageStore
 from Utils.Store.Credentials import CredentialStore
 from Utils.FilePicker import FilepickerFrame
 
+from Utils.Store.Actions.ImageStoreActions import ImageStoreActions
 from Utils.Store.Actions.CredentialsStoreActions import CredentialsStoreActions
 
 from Utils.Ewf import Ewf
@@ -175,8 +176,7 @@ class MenuFrame(Frame):
             self.form_data['IA'] = self.image_store.get_state()
             self.image_info_button.disabled = False
         else:
-            self.image_store.dispatch(
-                {'type': 'reset_state'})
+            self.image_store.dispatch(ImageStoreActions.reset_state())
             self.image_info_button.disabled = True
             self._scene.add_effect(
                 PopUpDialog(self._screen, 'Could not read image!', ['OK']))

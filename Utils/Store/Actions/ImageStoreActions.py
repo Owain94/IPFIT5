@@ -8,3 +8,9 @@ class ImageStoreActions:
             'type': ImageStoreActions.SET_IMAGE,
             'image': file_path
         }
+
+    @staticmethod
+    def reset_state():
+        return {
+            'type': ImageStoreActions.RESET_STATE
+        }

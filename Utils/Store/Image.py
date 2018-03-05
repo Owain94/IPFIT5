@@ -18,6 +18,6 @@ class ImageStore(metaclass=Singleton):
             return state
         elif action.get('type') == ImageStoreActions.SET_IMAGE:
             state = action.get('image')
-        elif action.get('type') == 'reset_state':
+        elif action.get('type') == ImageStoreActions.RESET_STATE:
             state = 'initial'
         return state
