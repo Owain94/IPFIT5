@@ -71,9 +71,7 @@ class CredentialStore(metaclass=Singleton):
                 }
             )
 
-        if action is None:
-            return state
-        elif action.get('type') == CredentialsStoreActions.SET_CREDENTIALS:
+        if action.get('type') == CredentialsStoreActions.SET_CREDENTIALS:
             state = {
                 'name': action.get('credentials').get('name'),
                 'location': action.get('credentials').get('location'),
