@@ -134,7 +134,7 @@ class Ewf(pytsk3.Img_Info):
 
     def get_handle(self) -> Tuple[pytsk3.Volume_Info, pytsk3.Img_Info]:
         return self.info(), \
-               self if self.encase_image(self.ext) else self.image_handle
+            self if self.encase_image(self.ext) else self.image_handle
 
     @staticmethod
     def open_fs_single_vol(img: pytsk3.Img_Info, path: str) -> \
