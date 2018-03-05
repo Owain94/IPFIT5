@@ -9,6 +9,7 @@ from asciimatics.exceptions import NextScene
 
 from Utils.Store.Image import ImageStore
 from Utils.Logging.Logging import Logging
+from Utils.Store.Actions.ImageStoreActions import ImageStoreActions
 
 
 class FilepickerFrame(Frame):
@@ -62,6 +63,6 @@ class FilepickerFrame(Frame):
 
     def selected(self):
         # Just confirm whenever the user actually selects something.
-        self.store.dispatch({'type': 'set_image', 'image': self._list.value})
+        self.store.dispatch(ImageStoreActions.set_image(self._list.value))
         # self.logger.info('Image selected: {}'.format(self._list.value))
         raise NextScene()

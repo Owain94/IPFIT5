@@ -12,6 +12,8 @@ from Utils.Store.Image import ImageStore
 from Utils.Store.Credentials import CredentialStore
 from Utils.FilePicker import FilepickerFrame
 
+from Utils.Store.Actions.CredentialsStoreActions import CredentialsStoreActions
+
 from Utils.Ewf import Ewf
 
 from Files.Files import Files
@@ -192,14 +194,12 @@ class MenuFrame(Frame):
                 self.data.get('DB') != cred_state['location'] or \
                 self.data.get('DC') != cred_state['case']:
             self.credentials_store.dispatch(
-                {
-                    'type': 'set_credentials',
-                    'credentials': {
-                        'name': self.data.get('DA'),
-                        'case': self.data.get('DB'),
-                        'location': self.data.get('DC'),
-                    }
-                })
+                CredentialsStoreActions.set_credentials(
+                    self.data.get('DA'),
+                    self.data.get('DB'),
+                    self.data.get('DC')
+                )
+            )
 
     def file_picker(self):
         raise NextScene()
