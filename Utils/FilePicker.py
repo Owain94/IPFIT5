@@ -7,7 +7,7 @@ from asciimatics.widgets import Frame, Layout, FileBrowser, Widget, Label, \
 from asciimatics.screen import Screen
 from asciimatics.exceptions import NextScene
 
-from Utils.Store import Store
+from Utils.Store.Image import ImageStore
 from Utils.Logging.Logging import Logging
 
 
@@ -23,7 +23,7 @@ class FilepickerFrame(Frame):
                                               can_scroll=False,
                                               name='Filepicker')
 
-        self.store = Store().image_store
+        self.store = ImageStore().image_store
 
         header = Layout([1])
         self.add_layout(header)

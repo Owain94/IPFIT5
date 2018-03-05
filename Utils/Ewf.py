@@ -8,7 +8,7 @@ from sys import setrecursionlimit, exc_info
 from pathlib import Path as PathlibPath
 from datetime import datetime
 
-from Utils.Store import Store
+from Utils.Store.Image import ImageStore
 from Utils.Logging.Logging import Logging
 
 from typing import List, Union, Tuple
@@ -17,7 +17,7 @@ from typing import List, Union, Tuple
 class Ewf(pytsk3.Img_Info):
     def __init__(self) -> None:
         self.logger = Logging(self.__class__.__name__).logger
-        self.store = Store().image_store
+        self.store = ImageStore().image_store
 
         setrecursionlimit(100000)
 
