@@ -1,6 +1,6 @@
 import unittest
 
-from Tests.Image import TestMethods as ImageTests
+from Tests.ImageStore import TestMethods as ImageTests
 
 
 if __name__ == '__main__':
