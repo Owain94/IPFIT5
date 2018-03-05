@@ -51,7 +51,7 @@ class CredentialStore(metaclass=Singleton):
                 [line.strip().split(':') for line in file.readlines()]
             }
 
-        for key, value in defaults.items():
+        for key in defaults.keys():
             if key in lines:
                 defaults[key] = lines[key]
 
