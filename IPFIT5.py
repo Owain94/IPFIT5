@@ -31,6 +31,7 @@ class MenuFrame(Frame):
             'IB': False
         }
 
+        self.ewf = Ewf()
         self.image_store = ImageStore().image_store
         self.credentials_store = CredentialStore().credential_store
         self.get_settings()
@@ -165,8 +166,19 @@ class MenuFrame(Frame):
         self.fix()
 
     def set_image(self):
-        self.form_data['IA'] = self.image_store.get_state()
-        self.image_info_button.disabled = False
+        if self.image_store.get_state() == 'initial':
+            return
+
+        if self.ewf.check_file():
+            self.form_data['IA'] = self.image_store.get_state()
+            self.image_info_button.disabled = False
+        else:
+            self.image_store.dispatch(
+                {'type': 'reset_state'})
+            self.image_info_button.disabled = True
+            self._scene.add_effect(
+                PopUpDialog(self._screen, 'Could not read image!', ['OK']))
+
         self.save()
 
     def on_change(self):
@@ -193,9 +205,8 @@ class MenuFrame(Frame):
         raise NextScene()
 
     def file_info(self):
-        ewf = Ewf()
-        metadata = ewf.encase_metadata()
-        volume_information = ewf.volume_info()
+        metadata = self.ewf.encase_metadata()
+        volume_information = self.ewf.volume_info()
 
         if len(metadata) > 0:
             metadata.append('')
@@ -228,7 +239,8 @@ class MenuFrame(Frame):
         if case is None or len(case[0]) is 0:
             msg.append('Case can not be empty')
 
-        if image is None or len(case[0]) is 0:
+        if image is None or len(case[0]) is 0 or self.image_store.get_state() \
+                == 'initial':
             msg.append('No image selected')
 
         if len(msg) > 0:

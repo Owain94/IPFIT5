@@ -17,4 +17,6 @@ class ImageStore(metaclass=Singleton):
             return state
         elif action['type'] == 'set_image':
             state = action['image']
+        elif action['type'] == 'reset_state':
+            state = 'initial'
         return state
