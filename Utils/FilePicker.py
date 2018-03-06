@@ -2,6 +2,7 @@ import os
 
 from collections import defaultdict
 
+from asciimatics.event import KeyboardEvent
 from asciimatics.widgets import Frame, Layout, FileBrowser, Widget, Label, \
     Divider
 from asciimatics.screen import Screen
@@ -47,7 +48,7 @@ class FilepickerFrame(Frame):
         layout.add_widget(Divider(), 1)
         layout.add_widget(self._list, 1)
         layout.add_widget(Divider(), 1)
-        layout.add_widget(Label('Press Enter to select.'), 1)
+        layout.add_widget(Label('Press Enter to select, press q to close.'), 1)
 
         # Prepare the Frame for use.
         self.fix()
@@ -66,3 +67,12 @@ class FilepickerFrame(Frame):
         self.store.dispatch(ImageStoreActions.set_image(self._list.value))
         # self.logger.info('Image selected: {}'.format(self._list.value))
         raise NextScene()
+
+    def process_event(self, event):
+        # Do the key handling for this Frame.
+        if isinstance(event, KeyboardEvent):
+            if event.key_code in [ord('q'), ord('Q')]:
+                raise NextScene()
+
+        # Now pass on to lower levels for normal handling of the event.
+        return super(FilepickerFrame, self).process_event(event)
