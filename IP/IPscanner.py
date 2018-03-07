@@ -3,18 +3,21 @@ import pyshark
 import hashlib
 import itertools
 import contextlib
-import sys,inspect
+import sys
+import inspect
 from mmap import mmap, ACCESS_READ
 from multiprocessing import Pool, cpu_count
 
 DEBUG = False
-#FIXME
+# FIXME
 #------------------------------------------------
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+currentdir = os.path.dirname(os.path.abspath(
+    inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
-sys.path.insert(0,parentdir) 
+sys.path.insert(0, parentdir)
 #---------------------------------------------
 from Utils.Logging import Logging
+
 
 def flatten(iterable):
     iterator, sentinel, stack = iter(iterable), object(), []
@@ -35,8 +38,10 @@ def flatten(iterable):
                 stack.append(iterator)
                 iterator = new_iterator
 
+
 class Hasher():
     BLOCKSIZE = 65536
+
     def __init__(self, filename):
         self.filename = filename
 
@@ -49,10 +54,10 @@ class Hasher():
         hasher = hashlib.sha256()
         s = self.getSize()
 
-        #On 0 bit files, it doesnt make sense to hash it.
+        # On 0 bit files, it doesnt make sense to hash it.
         if s == 0:
             return ""
-        
+
         with open(self.filename, 'rb') as f:
             buf = f.read(self.BLOCKSIZE)
             while len(buf) > 0:
@@ -66,6 +71,7 @@ def hash_file(file):
     hasher = Hasher(file)
     return (file, hasher.hash())
 
+
 class IPScanner():
     def __init__(self, files):
         #self.logger = Logging(self.__class__.__name__).logger
@@ -73,7 +79,7 @@ class IPScanner():
         self.common = set()
         self.ips = set()
         self.time_line = []
-        self.files = files    
+        self.files = files
 
     #@FIXME: Logging
     def hash(self):
@@ -100,16 +106,18 @@ class IPScanner():
                 yield pkt.ip.dst
             except Exception as e:
                 if DEBUG:
-                    print("An error occured in the grep_ips_from_file function: {}".format(e))
+                    print(
+                        "An error occured in the grep_ips_from_file function: {}".format(e))
         cap.close()
         return ips
 
     def grep_ips(self):
-        self.ips = set(itertools.chain.from_iterable((self.grep_ips_from_file(f) for f in self.files)))
+        self.ips = set(itertools.chain.from_iterable(
+            (self.grep_ips_from_file(f) for f in self.files)))
         return list(self.ips)
-    
+
     def sort(self):
-        #Sort by time,
+        # Sort by time,
         pass
 
     def try_read(self, pcap):
@@ -131,35 +139,38 @@ class IPScanner():
         sorted(self.time_line, key=lambda pkt: pkt[0])
         return self.time_line
 
-    #get out the protocolls
+    # get out the protocolls
     def info(self):
-        #get out whoami is and dns info.
+        # get out whoami is and dns info.
         pass
+
 
 def fancy_print():
     print()
     print("------------------------------------------")
     print()
-    
+
+
 if __name__ == '__main__':
-    scanner = IPScanner([r"C:/Users/Kasper/Documents/HSL/Jaar 2/Periode 3/capture_test.pcapng", r"C:/Users/Kasper/Documents/HSL/Jaar 2/Periode 3/capture_test1.pcapng"])
-    
+    scanner = IPScanner([r"C:/Users/Kasper/Documents/HSL/Jaar 2/Periode 3/capture_test.pcapng",
+                         r"C:/Users/Kasper/Documents/HSL/Jaar 2/Periode 3/capture_test1.pcapng"])
+
     hashes = scanner.hash()
     print("[*] The hashes of the input files are: [*]")
     for hash in hashes:
         print(hash)
-    
+
     fancy_print()
 
     ips = scanner.grep_ips()
     print("[*] all the Ip's in the pcaps are: [*]")
     for ip in ips:
         print(ip)
-    
+
     fancy_print()
-    
+
     f = input("welk bestand wil je comparen?:")
-    
+
     common = scanner.compare(f)
     print("[*] The IP-addresses that occur in both the pcaps and the given file are: [*]")
     for c in common:
@@ -171,5 +182,5 @@ if __name__ == '__main__':
     print("[*] The timeline of the pcaps are: [*]")
     for pkt in timeline:
         print(pkt)
-    
+
     fancy_print()
