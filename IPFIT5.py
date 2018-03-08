@@ -10,8 +10,11 @@ from sys import exit as exit_application
 
 from Utils.Store.Image import ImageStore
 from Utils.Store.Credentials import CredentialStore
+from Utils.Logging.Store.Logging import LoggingStore
+
 from Utils.FilePicker import FilepickerFrame
 
+from Utils.Logging.Store.Logging import LoggingStoreActions
 from Utils.Store.Actions.ImageStoreActions import ImageStoreActions
 from Utils.Store.Actions.CredentialsStoreActions import CredentialsStoreActions
 
@@ -37,6 +40,17 @@ class MenuFrame(Frame):
         self.ewf = Ewf()
         self.image_store = ImageStore().image_store
         self.credentials_store = CredentialStore().credential_store
+        self.logging_store = LoggingStore()
+
+        self.logging_store.logging_store.dispatch(
+            LoggingStoreActions.add_log(
+                why='Image analyzing',
+                what='Started IPFIT5.py',
+                how='Terminal',
+                result='Application started'
+            )
+        )
+
         self.get_settings()
 
         super(MenuFrame, self).__init__(screen,
