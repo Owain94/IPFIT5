@@ -1,3 +1,6 @@
+from typing import Dict, Union
+
+
 class CredentialsStoreActions:
     SET_CREDENTIALS = 'SET_CREDENTIALS'
     SET_NAME = 'SET_NAME'
@@ -6,7 +9,8 @@ class CredentialsStoreActions:
     SAVE_TO_DISK = 'SAVE_TO_DISK'
 
     @staticmethod
-    def set_credentials(name, location, case):
+    def set_credentials(name: str, location: str, case: str) -> \
+            Dict[str, Union[str, Dict[str, str]]]:
         return {
             'type': CredentialsStoreActions.SET_CREDENTIALS,
             'credentials': {
@@ -17,28 +21,28 @@ class CredentialsStoreActions:
         }
 
     @staticmethod
-    def set_name(name):
+    def set_name(name: str) -> Dict[str, str]:
         return {
             'type': CredentialsStoreActions.SET_NAME,
             'name': name
         }
 
     @staticmethod
-    def set_location(location):
+    def set_location(location: str) -> Dict[str, str]:
         return {
             'type': CredentialsStoreActions.SET_LOCATION,
             'location': location
         }
 
     @staticmethod
-    def set_case(case):
+    def set_case(case: str) -> Dict[str, str]:
         return {
             'type': CredentialsStoreActions.SET_CASE,
             'case': case
         }
 
     @staticmethod
-    def save_to_disk():
+    def save_to_disk() -> Dict[str, str]:
         return {
             'type': CredentialsStoreActions.SAVE_TO_DISK
         }
