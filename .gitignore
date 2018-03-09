@@ -107,13 +107,9 @@ venv.bak/
 # Pycharm
 .idea/
 
-<<<<<<< HEAD
-.DS_Store
-settings
-=======
 # MacOS
 .DS_Store
 
 # Ignore stored configs
 Configs/*.cfg
->>>>>>> a714de6... Added saving to disk to store
+test.py
