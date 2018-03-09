@@ -11,7 +11,7 @@ class LoggingStoreActions:
     def add_log(what: str,
                 why: str,
                 how: str,
-                result: str)-> \
+                result: str) -> \
             Dict[str, Union[str, Dict[str, Union[datetime, str]]]]:
         return {
             'type': LoggingStoreActions.ADD_LOG,
