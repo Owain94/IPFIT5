@@ -266,8 +266,11 @@ class MenuFrame(Frame):
 
     def exec(self):
         # Files -- hashing
-        if self.data.get('FA', None):
-            Files().get_hashes()
+        Files().run(
+            self.data.get('FA', False),
+            self.data.get('FB', False),
+            self.data.get('FC', False)
+        )
 
     def get_settings(self):
         settings = self.credentials_store.get_state()
