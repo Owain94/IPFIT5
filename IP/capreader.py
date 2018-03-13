@@ -2,18 +2,17 @@ import ipwhois
 import pyshark
 import dpkt
 
-import abc
 
 import os
-import hashlib
-import itertools
-import contextlib
+import abc
 import sys
-import inspect
 import socket
+import hashlib
 import datetime
+import itertools
 from enum import Enum
-from mmap import mmap, ACCESS_READ
+from functools import partial
+from itertools import product
 from multiprocessing import Pool, cpu_count
 
 
@@ -29,7 +28,8 @@ class Reader(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def extract_ips(file):
         raise NotImplementedError(
-            "Extracting of ip-addresses is one of the 2 things this class can do. This returns a generator that yields the IP's")
+            "Extracting of ip-addresses is one of the 2 things this class can do.\
+            This returns a generator that yields the IP's")
 
     @staticmethod
     @abc.abstractmethod
@@ -66,7 +66,8 @@ class DPKTReader(Reader):
 
     @staticmethod
     def to_protocoll(n):
-        """Converts a given number to a protocoll. Returns 'unknown' if the number could not be found in the map
+        """Converts a given number to a protocoll.
+            Returns 'unknown' if the number could not be found in the map
 
         Args:
             n: the number to be converted
@@ -212,12 +213,8 @@ class PcapReader():
         self.ips = set()
 
     @staticmethod
-    def read_dpkt(file):
-        return {ip for ip in DPKTReader.extract_ips(file)}
-
-    @staticmethod
-    def read_pyshark(file):
-        return {ip for ip in PysharkReader.extract_ips(file)}
+    def read(file, reader):
+        return {ip for ip in reader.extract_ips(file)}
 
     def set_compatible(self):
         for file in self.files:
@@ -257,7 +254,7 @@ class PcapReader():
         DPKT = False
         PYSHARK = False
 
-        if self.all_dpkt_compatible() and (preference == ReadPreference.UNKNOWN or preference == ReadPreference.DPKT):
+        if self.all_dpkt_compatible() and (preference in [ReadPreference.UNKNOWN, ReadPreference.DPKT]):
             DPKT = True
             Pyshark = False
 
@@ -265,23 +262,21 @@ class PcapReader():
             DPKT = False
             PYSHARK = True
 
-        if DPKT:  # self.all_dpkt_compatible() or preference == ReadPreference.DPKT:
-
+        if DPKT:
             print("Using DPKT")
+
             p = Pool(cpu_count())
-            tmp = p.map(PcapReader.read_dpkt, self.files)
+
+            tmp = p.map(partial(PcapReader.read, reader=DPKTReader), self.files)
             self.ips = {ip for set in tmp for ip in set}
 
-            print(len(list(self.ips)))
             return list(self.ips)
 
-        elif PYSHARK:  # self.all_pyshark_compatible() or preference == ReadPreference.PYSHARK:
-
+        elif PYSHARK:
             print("Using Pyshark")
 
             self.ips = {
-                ip for file in self.files for ip in PcapReader.read_pyshark(file)}
-            print(len(list(self.ips)))
+                ip for file in self.files for ip in PcapReader.read(file, reader=PysharkReader)}
             return list(self.ips)
 
         else:
