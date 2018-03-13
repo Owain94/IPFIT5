@@ -3,6 +3,10 @@ from pydux import create_store
 from datetime import datetime
 
 from Utils.Singleton import Singleton
+from Utils.XlsxWriter import XlsxWriter
+
+from Utils.Store.Credentials import CredentialStore
+
 from Utils.Logging.Store.Actions.LoggingActions import LoggingStoreActions
 
 from typing import Dict, Union
@@ -25,6 +29,44 @@ class LoggingStore(metaclass=Singleton):
             log.get('result')
         ])
 
+    def format_logs(self):
+        credentials = CredentialStore().credential_store.get_state()
+
+        log = []
+
+        for item in self.log:
+            log.append([
+                credentials.get('name'),
+                item[0].strftime("%d-%m-%Y %H:%M:%S"),
+                credentials.get('location'),
+                item[2],
+                item[1],
+                item[3],
+                'IPFIT5.py',
+                item[4]
+            ])
+
+        return log
+
+    def save_log(self) -> None:
+        logs = self.format_logs()
+
+        headers = [
+            'Who',
+            'When',
+            'Where',
+            'What',
+            'Why',
+            'How',
+            'With',
+            'Result'
+        ]
+
+        xlsx_writer = XlsxWriter('logbook')
+        xlsx_writer.add_worksheet()
+        xlsx_writer.write_headers(0, headers)
+        xlsx_writer.write_items(0, logs)
+
     def logging(self, state: Dict[str, str],
                 action: Dict[str, Union[Dict[str, str], str]]) \
             -> Dict[str, str]:
@@ -37,5 +79,5 @@ class LoggingStore(metaclass=Singleton):
                 'result': action.get('log').get('result')
             }
         if action.get('type') == LoggingStoreActions.SAVE_TO_DISK:
-            print(self.log)
+            self.save_log()
         return state
