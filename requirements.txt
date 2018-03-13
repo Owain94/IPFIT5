@@ -3,3 +3,4 @@ pydux
 codecov
 libewf-python
 pytsk3
+XlsxWriter
