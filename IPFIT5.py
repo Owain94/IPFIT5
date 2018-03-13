@@ -19,7 +19,7 @@ from Utils.Logging.Store.Logging import LoggingStoreActions
 from Utils.Store.Actions.ImageStoreActions import ImageStoreActions
 from Utils.Store.Actions.CredentialsStoreActions import CredentialsStoreActions
 
-from Utils.Ewf import Ewf
+from Utils.ImageHandler import ImageHandler
 
 from Files.Files import Files
 
@@ -38,7 +38,7 @@ class MenuFrame(Frame):
             'IB': False
         }
 
-        self.ewf = Ewf()
+        self.image_handler = ImageHandler()
         self.image_store = ImageStore().image_store
         credentials = CredentialStore()
         self.credentials_store = credentials.credential_store
@@ -190,7 +190,7 @@ class MenuFrame(Frame):
         if self.image_store.get_state() == 'initial':
             return
 
-        if self.ewf.check_file():
+        if self.image_handler.check_file():
             self.form_data['IA'] = self.image_store.get_state()
             self.image_info_button.disabled = False
         else:
@@ -223,8 +223,8 @@ class MenuFrame(Frame):
         raise NextScene()
 
     def file_info(self):
-        metadata = self.ewf.encase_metadata()
-        volume_information = self.ewf.volume_info()
+        metadata = self.image_handler.encase_metadata()
+        volume_information = self.image_handler.volume_info()
 
         if len(metadata) > 0:
             metadata.append('')

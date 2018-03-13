@@ -1,7 +1,7 @@
 import pyewf
 import pytsk3
 
-from os import sep
+from os import sep, SEEK_END
 from re import search, I
 from hashlib import sha256
 from sys import setrecursionlimit, exc_info
@@ -15,6 +15,25 @@ from typing import List, Union, Tuple
 
 
 class Ewf(pytsk3.Img_Info):
+    def __init__(self, ewf_handle):
+        self.ewf_handle = ewf_handle
+        # noinspection PyArgumentList
+        super(Ewf, self).__init__(url='',
+                                  type=pytsk3.TSK_IMG_TYPE_EXTERNAL)
+
+    def close(self):
+        self.ewf_handle.close()
+        # pass
+
+    def read(self, offset, size, **kwargs):
+        self.ewf_handle.seek(offset)
+        return self.ewf_handle.read(size)
+
+    def get_size(self):
+        return self.ewf_handle.get_media_size()
+
+
+class ImageHandler:
     def __init__(self) -> None:
         self.logger = Logging(self.__class__.__name__).logger
         self.store = ImageStore().image_store
@@ -34,13 +53,10 @@ class Ewf(pytsk3.Img_Info):
             self.logger.info('{} loaded with EWF'.format(
                 self.store.get_state().split(sep)[-1])
             )
-            # noinspection PyArgumentList
-            super(Ewf, self).__init__(url='',
-                                      type=pytsk3.TSK_IMG_TYPE_EXTERNAL)
 
-    def close(self) -> None:
-        self.logger.debug('EWF handle closed')
-        self.ewf_handle.close()
+            self.image_handle = Ewf(self.ewf_handle)
+        else:
+            self.image_handle = pytsk3.Img_Info(self.store.get_state())
 
     def check_file_path(self) -> bool:
         image_path = PathlibPath(self.store.get_state())
@@ -54,11 +70,10 @@ class Ewf(pytsk3.Img_Info):
         return True
 
     def info(self):
-        if self.encase_image(self.ext):
-            return pytsk3.Volume_Info(self)
-        # noinspection PyArgumentList
-        self.image_handle = pytsk3.Img_Info(url=self.store.get_state())
-        return pytsk3.Volume_Info(self.image_handle)
+        try:
+            return pytsk3.Volume_Info(self.image_handle)
+        except RuntimeError:
+            return None
 
     def encase_metadata(self) -> Union[List, List[Union[str, str]]]:
         if not self.encase_image(self.ext):
@@ -133,8 +148,7 @@ class Ewf(pytsk3.Img_Info):
         )
 
     def get_handle(self) -> Tuple[pytsk3.Volume_Info, pytsk3.Img_Info]:
-        return self.info(), \
-            self if self.encase_image(self.ext) else self.image_handle
+        return self.info(), self.image_handle
 
     @staticmethod
     def open_fs_single_vol(img: pytsk3.Img_Info, path: str) -> \
@@ -146,8 +160,11 @@ class Ewf(pytsk3.Img_Info):
 
             return fs, root
         except IOError:
-            _, e, _ = exc_info()
-            print('[-] Unable to open FS:\n {}'.format(e))
+            pass
+
+            return None, None
+        except RuntimeError:
+            pass
 
             return None, None
 
@@ -163,9 +180,10 @@ class Ewf(pytsk3.Img_Info):
 
             return fs, root
         except IOError:
-            _, e, _ = exc_info()
-            print('[-] Unable to open FS:\n {}'.format(e))
+            pass
 
+            return None, None
+        except RuntimeError:
             return None, None
 
     @staticmethod
@@ -189,20 +207,23 @@ class Ewf(pytsk3.Img_Info):
             fs, root = self.open_fs_single_vol(img, path)
 
         if fs is not None and root is not None:
-            for fs_object in root:
-                if self.nameless_dir(fs_object):
-                    continue
+            try:
+                for fs_object in root:
+                    if self.nameless_dir(fs_object):
+                        continue
 
-                try:
-                    file_name = fs_object.info.name.name.decode('UTF-8')
+                    try:
+                        file_name = fs_object.info.name.name.decode('UTF-8')
 
-                    if file_name.lower() == filename.lower():
-                        return self.hash_file(fs_object) if hashing else \
-                            fs_object
-                except IOError:
-                    pass
+                        if file_name.lower() == filename.lower():
+                            return self.hash_file(fs_object) if hashing else \
+                                fs_object
+                    except IOError:
+                        pass
+            except RuntimeError:
+                pass
 
-        return None
+        return '' if hashing else None
 
     def files(self, search_str: str = None) -> \
             List[List[Union[str, datetime]]]:
