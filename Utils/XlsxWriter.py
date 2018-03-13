@@ -10,7 +10,7 @@ from typing import List
 class XlsxWriter:
     def __init__(self, name: str) -> None:
         self.workbook = Workbook(self.get_save_path(name))
-        self.worksheets = []
+        self.worksheets = {}
 
     @staticmethod
     def get_save_path(name) -> str:
@@ -32,22 +32,22 @@ class XlsxWriter:
             ))
         )
 
-    def add_worksheet(self) -> None:
-        self.worksheets.append(self.workbook.add_worksheet())
+    def add_worksheet(self, name) -> None:
+        self.worksheets[name] = self.workbook.add_worksheet(name)
 
-    def write_headers(self, worksheet: int, headers: List[str]) -> None:
+    def write_headers(self, worksheet: str, headers: List[str]) -> None:
         bold = self.workbook.add_format({'bold': True})
         bold.set_center_across()
 
         for i, header in enumerate(headers):
             self.worksheets[worksheet].write(0, i, header, bold)
 
-    def write_items(self, worksheet: int, items: List[List[str]]) -> None:
+    def write_items(self, worksheet: str, items: List[List[str]]) -> None:
         for i, item_list in enumerate(items):
             for j, item in enumerate(item_list):
                 self.worksheets[worksheet].write(i + 2, j, item)
 
-        self.set_width(0, self.get_width(items))
+        self.set_width(worksheet, self.get_width(items))
 
     @staticmethod
     def get_width(items: List[List[str]]) -> List[int]:
@@ -60,6 +60,6 @@ class XlsxWriter:
 
         return width
 
-    def set_width(self, worksheet: int, width: List[int]) -> None:
+    def set_width(self, worksheet: str, width: List[int]) -> None:
         for i, w in enumerate(width):
             self.worksheets[worksheet].set_column(i, i, w + 1)

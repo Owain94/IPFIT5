@@ -63,9 +63,9 @@ class LoggingStore(metaclass=Singleton):
         ]
 
         xlsx_writer = XlsxWriter('logbook')
-        xlsx_writer.add_worksheet()
-        xlsx_writer.write_headers(0, headers)
-        xlsx_writer.write_items(0, logs)
+        xlsx_writer.add_worksheet('Logging')
+        xlsx_writer.write_headers('Logging', headers)
+        xlsx_writer.write_items('Logging', logs)
 
     def logging(self, state: Dict[str, str],
                 action: Dict[str, Union[Dict[str, str], str]]) \
