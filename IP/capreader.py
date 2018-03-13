@@ -166,12 +166,11 @@ class PysharkReader(Reader):
 
             except Exception:
                 continue
-        
-        #This prevents getting an Overlapping Future error.
+
+        # This prevents getting an Overlapping Future error.
         cap.close()
         if not cap.eventloop.is_closed():
             cap.eventloop.close()
-
 
 
 class Hasher():
@@ -240,12 +239,12 @@ class PcapReader():
         self.hashes = p.map(Hasher.hash, self.files)
 
         return self.hashes
-    
-    #checks if all files can be read with the dpkt reader
+
+    # checks if all files can be read with the dpkt reader
     def all_dpkt_compatible(self):
         return all(DPKTReader.is_compatible(file) for file in self.files)
 
-    #checks if all files can be read with the pyshark reader
+    # checks if all files can be read with the pyshark reader
     def all_pyshark_compatible(self):
         return all(DPKTReader.is_compatible(file) for file in self.files)
 
