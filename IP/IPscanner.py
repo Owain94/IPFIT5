@@ -99,7 +99,7 @@ class IPScanner():
 
     def grep_ips_from_file(self, pcap):
         ips = []
-        cap = pyshark.FileCapture(pcap)
+        cap = pyshark.FileCapture(pcap, keep_packets=False)
         for pkt in cap:
             try:
                 yield pkt.ip.src
@@ -109,6 +109,8 @@ class IPScanner():
                     print(
                         "An error occured in the grep_ips_from_file function: {}".format(e))
         cap.close()
+        if not cap.eventloop.is_closed():
+            cap.eventloop.close()
         return ips
 
     def grep_ips(self):
@@ -121,7 +123,7 @@ class IPScanner():
         pass
 
     def try_read(self, pcap):
-        cap = pyshark.FileCapture(pcap)
+        cap = pyshark.FileCapture(pcap, keep_packets=False)
         for pkt in cap:
             try:
                 yield (pkt.sniff_time, pkt.transport_layer, pkt.ip.src, pkt.ip.dst)
@@ -129,6 +131,8 @@ class IPScanner():
                 if DEBUG:
                     print("An error occured in the try_read function: {}".format(e))
         cap.close()
+        if not cap.eventloop.is_closed():
+            cap.eventloop.close()
 
     def timeline(self):
         for pcap in self.files:
