@@ -267,7 +267,8 @@ class PcapReader():
 
             p = Pool(cpu_count())
 
-            tmp = p.map(partial(PcapReader.read, reader=DPKTReader), self.files)
+            tmp = p.map(partial(PcapReader.read,
+                                reader=DPKTReader), self.files)
             self.ips = {ip for set in tmp for ip in set}
 
             return list(self.ips)
