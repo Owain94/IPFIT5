@@ -166,6 +166,12 @@ class PysharkReader(Reader):
 
             except Exception:
                 continue
+        
+        #This prevents getting an Overlapping Future error.
+        cap.close()
+        if not cap.eventloop.is_closed():
+            cap.eventloop.close()
+
 
 
 class Hasher():
@@ -234,12 +240,14 @@ class PcapReader():
         self.hashes = p.map(Hasher.hash, self.files)
 
         return self.hashes
-
+    
+    #checks if all files can be read with the dpkt reader
     def all_dpkt_compatible(self):
-        return len(self.files) == len(self.dpkt_compatible)
+        return all(DPKTReader.is_compatible(file) for file in self.files)
 
+    #checks if all files can be read with the pyshark reader
     def all_pyshark_compatible(self):
-        return len(self.files) == len(self.pyshark_compatible)
+        return all(DPKTReader.is_compatible(file) for file in self.files)
 
     def extract_ips(self, preference=ReadPreference.UNKNOWN):
         """Extracts the ip-addresses using a Reader. Also set's the instance's ips to the ip-addresses found,
@@ -287,8 +295,7 @@ class PcapReader():
 if __name__ == '__main__':
     import time
 
-    pcapreader = PcapReader([r"E:\converted.pcap"])
-    pcapreader.set_compatible()
+    pcapreader = PcapReader([r"E:\converted.pcap", r"E:\filtered03.pcap"])
 
     hashes = pcapreader.hash()
 
