@@ -14,6 +14,7 @@ class CredentialStore(metaclass=Singleton):
     def __init__(self) -> None:
         self.credential_store = create_store(self.credentials)
         self.credential_store.subscribe(self.credentials_changed)
+        self._time = None
 
     @debounce(0.25)
     def credentials_changed(self) -> None:
@@ -56,6 +57,14 @@ class CredentialStore(metaclass=Singleton):
                 defaults[key] = lines[key]
 
         return defaults
+
+    @property
+    def time(self):
+        return self._time
+
+    @time.setter
+    def time(self, time):
+        self._time = time
 
     @staticmethod
     def credentials(state: Dict[str, str],

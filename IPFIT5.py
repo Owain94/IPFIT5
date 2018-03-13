@@ -1,4 +1,5 @@
 from collections import defaultdict
+from datetime import datetime
 
 from asciimatics.widgets import Frame, Text, TextBox, Layout, Label, Divider, \
     CheckBox, Button, PopUpDialog
@@ -39,8 +40,11 @@ class MenuFrame(Frame):
 
         self.ewf = Ewf()
         self.image_store = ImageStore().image_store
-        self.credentials_store = CredentialStore().credential_store
+        credentials = CredentialStore()
+        self.credentials_store = credentials.credential_store
         self.logging_store = LoggingStore()
+
+        credentials.time = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 
         self.logging_store.logging_store.dispatch(
             LoggingStoreActions.add_log(
