@@ -105,7 +105,7 @@ class DPKTReader(Reader):
 
     @staticmethod
     def extract_ips(file: str) -> Iterable[Tuple[str, str]]:
-    
+
         with open(file, 'rb') as f:
             pcap = dpkt.pcap.Reader(f)
 
@@ -160,7 +160,7 @@ class PysharkReader(Reader):
                 yield pkt.ip.dst
             except Exception:
                 continue
-        # This prevents getting an Overlapping Future error.         
+        # This prevents getting an Overlapping Future error.
         PysharkReader.close_cap(cap)
 
     @staticmethod
@@ -187,7 +187,8 @@ class PysharkReader(Reader):
         cap.close()
         if not cap.eventloop.is_closed():
             cap.eventloop.close()
-       
+
+
 class Hasher():
     BLOCKSIZE = 65536
 
@@ -312,14 +313,16 @@ class PcapReader():
 
         else:
             raise CompatibleException("This is not supported YET")
-    
-    def extract_all(self, preference = ReadPreference.UNKNOWN) -> List[Tuple[str, str, str, str]]:
+
+    def extract_all(self, preference=ReadPreference.UNKNOWN) -> List[Tuple[str, str, str, str]]:
         pass
+
 
 if __name__ == '__main__':
     import time
 
-    pcapreader = PcapReader([r"E:\converted.pcap", r"E:\network_conerted.pcap"])
+    pcapreader = PcapReader(
+        [r"E:\converted.pcap", r"E:\network_conerted.pcap"])
 
     hashes = pcapreader.hash()
 
