@@ -2,7 +2,6 @@ import ipwhois
 import pyshark
 import dpkt
 
-
 import os
 import abc
 import sys
@@ -39,11 +38,12 @@ class Reader(object, metaclass=abc.ABCMeta):
             Args:
                 file: the pcap to be read
             Returns:
-                Generator: An iterable over the ip-addresses in the given pcap file
+                Generator: An iterable over the ip-addresses in the given
+                pcap file
         """
         raise NotImplementedError(
-            "Extracting of ip-addresses is one of the 2 things this class can do.\
-            This returns a generator that yields the IP's")
+            "Extracting of ip-addresses is one of the 2 things this class"
+            "can do. This returns a generator that yields the IP's")
 
     @staticmethod
     @abc.abstractmethod
@@ -56,7 +56,8 @@ class Reader(object, metaclass=abc.ABCMeta):
                            protocolls and timestamp
         """
         raise NotImplementedError(
-            "This returns a generator that yields tuples of (ip.src, ip.dst, protocoll, timestamp)")
+            "This returns a generator that yields tuples of (ip.src, ip.dst,"
+            "protocoll, timestamp)")
 
 
 class DPKTReader(Reader):
@@ -273,19 +274,20 @@ class PcapReader():
         return all(DPKTReader.is_compatible(file) for file in self.files)
 
     def extract_ips(self, preference=ReadPreference.UNKNOWN) -> List[str]:
-        """Extracts the ip-addresses using a Reader. Also set's the instance's ips to the ip-addresses found,
-            so they can be used in other methods.
+        """Extracts the ip-addresses using a Reader. Also set's the instance's
+        ips to the ip-addresses found, so they can be used in other methods.
 
             Args:
-                preference: with the preference it is possible to preference one of the readers, by default
-                it's UNKNOWN.
+                preference: with the preference it is possible to preference
+                one of the readers, by default it's UNKNOWN.
             Returns:
                 List: A list of unique IP's found in all given pcap-files
         """
         DPKT = False
         PYSHARK = False
 
-        if self.all_dpkt_compatible() and (preference in [ReadPreference.UNKNOWN, ReadPreference.DPKT]):
+        if self.all_dpkt_compatible() and (
+                preference in [ReadPreference.UNKNOWN, ReadPreference.DPKT]):
             DPKT = True
             PYSHARK = False
 
@@ -308,13 +310,15 @@ class PcapReader():
             print("Using Pyshark")
 
             self.ips = {
-                ip for file in self.files for ip in PcapReader.read(file, reader=PysharkReader)}
+                ip for file in self.files for ip in
+            PcapReader.read(file, reader=PysharkReader)}
             return list(self.ips)
 
         else:
             raise CompatibleException("This is not supported YET")
 
-    def extract_all(self, preference=ReadPreference.UNKNOWN) -> List[Tuple[str, str, str, str]]:
+    def extract_all(self, preference=ReadPreference.UNKNOWN) -> List[
+        Tuple[str, str, str, str]]:
         pass
 
 
@@ -337,7 +341,8 @@ if __name__ == '__main__':
 
     s = time.time()
     test_end = None
-    for (src, dst, prot, stamp) in PysharkReader.extract_all(r"E:\converted.pcap"):
+    for (src, dst, prot, stamp) in PysharkReader.extract_all(
+            r"E:\converted.pcap"):
         n += 1
         test_end = stamp
 
@@ -346,7 +351,8 @@ if __name__ == '__main__':
     m = 0
     t = time.time()
     test_start = None
-    for (src, dst, prot, stamp) in DPKTReader.extract_all(r"E:\converted.pcap"):
+    for (src, dst, prot, stamp) in DPKTReader.extract_all(
+            r"E:\converted.pcap"):
         if m == 0:
             test_start = stamp
         m += 1
