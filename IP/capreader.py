@@ -245,12 +245,12 @@ class PcapReader():
     @staticmethod
     def read(f: str, reader) -> set:
         return {ip for ip in reader.extract_ips(f)}
-    
+
     @staticmethod
     def read_all(f: str, reader, compare: List[str]) -> set:
-        return {(src, dst, prot, stamp) for (src, dst, prot, stamp) in \
-            reader.extract_all(f) if any(ip in compare for ip in [src, dst])
-        }
+        return {(src, dst, prot, stamp) for (src, dst, prot, stamp) in
+                reader.extract_all(f) if any(ip in compare for ip in [src, dst])
+                }
 
     def set_compatible(self):
         for f in self.files:
@@ -325,16 +325,15 @@ class PcapReader():
 
     def in_common(self, other: str) -> List[str]:
         with open(other, 'r') as f:
-            to_compare = { line.rstrip() for line in f.readlines() }
+            to_compare = {line.rstrip() for line in f.readlines()}
 
             self.similarities = self.ips.intersection(to_compare)
-        
+
         return list(self.similarities)
-            
 
     def generate_timeline(self, preference=ReadPreference.UNKNOWN) -> List[
             Tuple[str, str, str, str]]:
-        
+
         DPKT = False
         PYSHARK = False
 
@@ -346,7 +345,7 @@ class PcapReader():
         else:
             DPKT = False
             PYSHARK = True
-        
+
         if DPKT:
             p = Pool(cpu_count())
 
@@ -354,7 +353,7 @@ class PcapReader():
                 PcapReader.read_all,
                 reader=DPKTReader,
                 compare=self.similarities), self.files)
-            
+
             self.timeline = [line for s in tmp for line in s]
 
         elif PYSHARK:
@@ -365,17 +364,19 @@ class PcapReader():
                     f,
                     reader=PysharkReader,
                     compare=self.similarities)]
-        
+
         else:
             raise CompatibleException("This is not supported YET")
-        
-        sorted(self.timeline, key = lambda line: line[3])
+
+        sorted(self.timeline, key=lambda line: line[3])
 
         return self.timeline
 
 
 def fancy_print():
     print("\n---------------------------------------------------------\n")
+
+
 if __name__ == '__main__':
     import time
 
