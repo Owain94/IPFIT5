@@ -1,7 +1,7 @@
 from Interfaces.ModuleInterface import ModuleInterface
 
 from Utils.Logging.Logging import Logging
-from Utils.Ewf import Ewf
+from Utils.ImageHandler import ImageHandler
 
 from datetime import datetime
 from multiprocessing import Process, Manager
@@ -14,7 +14,7 @@ import csv
 class Files(ModuleInterface):
     def __init__(self):
         self.logger = Logging(self.__class__.__name__).logger
-        self.ewf = Ewf()
+        self.image_handler = ImageHandler()
 
         self.options = {}
 
@@ -59,7 +59,7 @@ class Files(ModuleInterface):
         pass
 
     def get_files(self) -> None:
-        data = self.ewf.files()
+        data = self.image_handler.files()
 
         self.data['files'] = data
 
@@ -71,9 +71,10 @@ class Files(ModuleInterface):
 
     def get_hash(self, file: List[Union[str, datetime]], shared_list: List) \
             -> None:
-        sha_sum = self.ewf.single_file(int(file[0][-1]),
-                                       Ewf.rreplace(file[8], file[1], ''),
-                                       file[1], True)
+        sha_sum = self.image_handler\
+            .single_file(int(file[0][-1]),
+                         ImageHandler.rreplace(file[8], file[1], ''),
+                         file[1], True)
 
         file.append(sha_sum)
         shared_list.append(file)
