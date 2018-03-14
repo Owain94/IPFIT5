@@ -46,17 +46,18 @@ class ImageHandler:
         self.search_result = None
         self.logger.debug('Extension: ' + self.ext)
 
-        if self.encase_image(self.ext):
-            self.ewf_handle = pyewf.handle()
-            self.ewf_handle.open(pyewf.glob(self.store.get_state()))
-            self.logger.debug('EWF handle opened')
-            self.logger.info('{} loaded with EWF'.format(
-                self.store.get_state().split(sep)[-1])
-            )
+        if self.store.get_state() != 'initial':
+            if self.encase_image(self.ext):
+                self.ewf_handle = pyewf.handle()
+                self.ewf_handle.open(pyewf.glob(self.store.get_state()))
+                self.logger.debug('EWF handle opened')
+                self.logger.info('{} loaded with EWF'.format(
+                    self.store.get_state().split(sep)[-1])
+                )
 
-            self.image_handle = Ewf(self.ewf_handle)
-        else:
-            self.image_handle = pytsk3.Img_Info(self.store.get_state())
+                self.image_handle = Ewf(self.ewf_handle)
+            else:
+                self.image_handle = pytsk3.Img_Info(self.store.get_state())
 
     def check_file_path(self) -> bool:
         image_path = PathlibPath(self.store.get_state())
