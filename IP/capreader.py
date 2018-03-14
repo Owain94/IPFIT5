@@ -311,14 +311,14 @@ class PcapReader():
 
             self.ips = {
                 ip for file in self.files for ip in
-            PcapReader.read(file, reader=PysharkReader)}
+                PcapReader.read(file, reader=PysharkReader)}
             return list(self.ips)
 
         else:
             raise CompatibleException("This is not supported YET")
 
     def extract_all(self, preference=ReadPreference.UNKNOWN) -> List[
-        Tuple[str, str, str, str]]:
+            Tuple[str, str, str, str]]:
         pass
 
 
