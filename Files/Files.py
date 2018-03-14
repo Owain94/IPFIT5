@@ -8,8 +8,6 @@ from multiprocessing import Process, Manager
 
 from typing import List, Union, Dict
 
-import csv
-
 
 class Files(ModuleInterface):
     def __init__(self):
@@ -100,17 +98,3 @@ class Files(ModuleInterface):
             lst = [x for x in shared_list]
 
         self.data['hashing'] = [lst]
-
-    @staticmethod
-    def write_csv(data: List[List[Union[str, datetime]]], output: str) -> None:
-        if not data:
-            return
-
-        with open(output, 'w') as csvfile:
-            csv_writer = csv.writer(csvfile)
-            headers = ['Partition', 'File', 'File Ext', 'File Type',
-                       'Create Date', 'Modify Date', 'Change Date', 'Size',
-                       'File Path', 'Hash']
-            csv_writer.writerow(headers)
-            for result_list in data:
-                csv_writer.writerows(result_list)
