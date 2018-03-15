@@ -11,6 +11,7 @@ class XlsxWriter:
     def __init__(self, name: str) -> None:
         self.workbook = Workbook(self.get_save_path(name))
         self.worksheets = {}
+        self.headers = None
 
     @staticmethod
     def get_save_path(name) -> str:
@@ -32,10 +33,12 @@ class XlsxWriter:
             ))
         )
 
-    def add_worksheet(self, name) -> None:
+    def add_worksheet(self, name: str) -> None:
         self.worksheets[name] = self.workbook.add_worksheet(name)
 
     def write_headers(self, worksheet: str, headers: List[str]) -> None:
+        self.headers = headers
+
         bold = self.workbook.add_format({'bold': True})
         bold.set_center_across()
 
@@ -47,16 +50,19 @@ class XlsxWriter:
             for j, item in enumerate(item_list):
                 self.worksheets[worksheet].write(i + 2, j, item)
 
-        self.set_width(worksheet, self.get_width(items))
+        self.set_width(worksheet, self.get_width(self.headers, items))
 
     @staticmethod
-    def get_width(items: List[List[str]]) -> List[int]:
-        width = [0 for _ in items[0]]
+    def get_width(headers: List[str], items: List[List[str]]) -> List[int]:
+        if headers is None:
+            width = [0 for _ in items[0]]
+        else:
+            width = [len(i) for i in headers]
 
         for item_list in items:
             for j, item in enumerate(item_list):
-                if width[j] < len(item):
-                    width[j] = len(item)
+                if width[j] < len(str(item)):
+                    width[j] = len(str(item))
 
         return width
 
