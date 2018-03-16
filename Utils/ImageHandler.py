@@ -1,20 +1,21 @@
 import pyewf
 import pytsk3
 
-from os import sep, SEEK_END
+from os import sep
 from re import search, I
 from hashlib import sha256
-from sys import setrecursionlimit, exc_info
+from sys import setrecursionlimit
 from pathlib import Path as PathlibPath
 from datetime import datetime
 
+from Utils.Singleton import Singleton
 from Utils.Store.Image import ImageStore
 from Utils.Logging.Logging import Logging
 
 from typing import List, Union, Tuple
 
 
-class Ewf(pytsk3.Img_Info):
+class Ewf(pytsk3.Img_Info, metaclass=Singleton):
     def __init__(self, ewf_handle):
         self.ewf_handle = ewf_handle
         # noinspection PyArgumentList
@@ -23,7 +24,6 @@ class Ewf(pytsk3.Img_Info):
 
     def close(self):
         self.ewf_handle.close()
-        # pass
 
     def read(self, offset, size, **kwargs):
         self.ewf_handle.seek(offset)
@@ -33,7 +33,7 @@ class Ewf(pytsk3.Img_Info):
         return self.ewf_handle.get_media_size()
 
 
-class ImageHandler:
+class ImageHandler(metaclass=Singleton):
     def __init__(self) -> None:
         self.logger = Logging(self.__class__.__name__).logger
         self.store = ImageStore().image_store
