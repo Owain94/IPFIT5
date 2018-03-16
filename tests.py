@@ -4,5 +4,9 @@ from Tests.ImageStore import TestMethods as ImageTests
 
 
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromModule(ImageTests())
+    loader = unittest.TestLoader()
+    suite = unittest.TestSuite()
+
+    suite.addTests(loader.loadTestsFromModule(ImageTests()))
+
     unittest.TextTestRunner(verbosity=2).run(suite)
