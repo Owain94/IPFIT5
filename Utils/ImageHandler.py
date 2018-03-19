@@ -1,5 +1,6 @@
-import pyewf
-import pytsk3
+from pyewf import handle, glob
+from pytsk3 import Img_Info, Volume_Info, FS_Info, Directory, File, \
+    TSK_VS_PART_INFO, TSK_IMG_TYPE_EXTERNAL, TSK_FS_META_TYPE_DIR
 
 from os import sep
 from re import search, I
@@ -15,12 +16,12 @@ from Utils.Logging.Logging import Logging
 from typing import List, Union, Tuple
 
 
-class Ewf(pytsk3.Img_Info, metaclass=Singleton):
+class Ewf(Img_Info, metaclass=Singleton):
     def __init__(self, ewf_handle):
         self.ewf_handle = ewf_handle
         # noinspection PyArgumentList
         super(Ewf, self).__init__(url='',
-                                  type=pytsk3.TSK_IMG_TYPE_EXTERNAL)
+                                  type=TSK_IMG_TYPE_EXTERNAL)
 
     def close(self):
         self.ewf_handle.close()
@@ -48,8 +49,8 @@ class ImageHandler(metaclass=Singleton):
 
         if self.store.get_state() != 'initial':
             if self.encase_image(self.ext):
-                self.ewf_handle = pyewf.handle()
-                self.ewf_handle.open(pyewf.glob(self.store.get_state()))
+                self.ewf_handle = handle()
+                self.ewf_handle.open(glob(self.store.get_state()))
                 self.logger.debug('EWF handle opened')
                 self.logger.info('{} loaded with EWF'.format(
                     self.store.get_state().split(sep)[-1])
@@ -57,7 +58,7 @@ class ImageHandler(metaclass=Singleton):
 
                 self.image_handle = Ewf(self.ewf_handle)
             else:
-                self.image_handle = pytsk3.Img_Info(self.store.get_state())
+                self.image_handle = Img_Info(self.store.get_state())
 
     def check_file_path(self) -> bool:
         image_path = PathlibPath(self.store.get_state())
@@ -72,7 +73,7 @@ class ImageHandler(metaclass=Singleton):
 
     def info(self):
         try:
-            return pytsk3.Volume_Info(self.image_handle)
+            return Volume_Info(self.image_handle)
         except RuntimeError:
             return None
 
@@ -80,15 +81,15 @@ class ImageHandler(metaclass=Singleton):
         if not self.encase_image(self.ext):
             return []
 
-        handle = self.ewf_handle
+        ewf_handle = self.ewf_handle
 
         metadata = [
             'EWF Acquisition Metadata',
             ''
         ]
 
-        headers = handle.get_header_values()
-        hashes = handle.get_hash_values()
+        headers = ewf_handle.get_header_values()
+        hashes = ewf_handle.get_hash_values()
 
         for k in headers:
             metadata.append("- {}: {}".format(k.replace('_', ' ').capitalize(),
@@ -98,10 +99,11 @@ class ImageHandler(metaclass=Singleton):
         for h in hashes:
             metadata.append("- {}: {}".format(h, hashes[h]))
         metadata.append(
-            "- Bytes per Sector: {}".format(handle.bytes_per_sector))
+            "- Bytes per Sector: {}".format(ewf_handle.bytes_per_sector))
         metadata.append(
-            "- Number of Sectors: {}".format(handle.get_number_of_sectors()))
-        metadata.append("- Total Size: {}".format(handle.get_media_size()))
+            "- Number of Sectors: {}".format(
+                ewf_handle.get_number_of_sectors()))
+        metadata.append("- Total Size: {}".format(ewf_handle.get_media_size()))
 
         return metadata
 
@@ -138,7 +140,7 @@ class ImageHandler(metaclass=Singleton):
         return (s[::-1].replace(old[::-1], new[::-1], 1))[::-1]
 
     @staticmethod
-    def partition_check(part: pytsk3.TSK_VS_PART_INFO) -> bool:
+    def partition_check(part: TSK_VS_PART_INFO) -> bool:
         tables_to_ignore = ['Unallocated', 'Extended', 'Primary Table']
         decoded = part.desc.decode('UTF-8')
 
@@ -148,14 +150,14 @@ class ImageHandler(metaclass=Singleton):
             if table in decoded
         )
 
-    def get_handle(self) -> Tuple[pytsk3.Volume_Info, pytsk3.Img_Info]:
+    def get_handle(self) -> Tuple[Volume_Info, Img_Info]:
         return self.info(), self.image_handle
 
     @staticmethod
-    def open_fs_single_vol(img: pytsk3.Img_Info, path: str) -> \
-            Union[Tuple[pytsk3.FS_Info, pytsk3.Directory], Tuple[None, None]]:
+    def open_fs_single_vol(img: Img_Info, path: str) -> \
+            Union[Tuple[FS_Info, Directory], Tuple[None, None]]:
         try:
-            fs = pytsk3.FS_Info(img)
+            fs = FS_Info(img)
             # noinspection PyArgumentList
             root = fs.open_dir(path=path)
 
@@ -170,11 +172,11 @@ class ImageHandler(metaclass=Singleton):
             return None, None
 
     @staticmethod
-    def open_fs(img: pytsk3.Img_Info, vol: pytsk3.Volume_Info, path: str,
-                part: pytsk3.Volume_Info) -> \
-            Union[Tuple[pytsk3.FS_Info, pytsk3.Directory], Tuple[None, None]]:
+    def open_fs(img: Img_Info, vol: Volume_Info, path: str,
+                part: Volume_Info) -> \
+            Union[Tuple[FS_Info, Directory], Tuple[None, None]]:
         try:
-            fs = pytsk3.FS_Info(
+            fs = FS_Info(
                 img, offset=part.start * vol.info.block_size)
             # noinspection PyArgumentList
             root = fs.open_dir(path=path)
@@ -188,7 +190,7 @@ class ImageHandler(metaclass=Singleton):
             return None, None
 
     @staticmethod
-    def nameless_dir(fs_object: pytsk3.File) -> bool:
+    def nameless_dir(fs_object: File) -> bool:
         return not hasattr(fs_object, 'info') \
             or not hasattr(fs_object.info, 'name') or not hasattr(
             fs_object.info.name, 'name') or \
@@ -249,8 +251,8 @@ class ImageHandler(metaclass=Singleton):
 
         return recursed_data
 
-    def recurse_files(self, part: int, fs: pytsk3.FS_Info,
-                      root_dir: pytsk3.Directory, dirs: List[pytsk3.Directory],
+    def recurse_files(self, part: int, fs: FS_Info,
+                      root_dir: Directory, dirs: List[Directory],
                       data: List[List[Union[str, datetime]]],
                       parent: List[str], search_str: str = None) -> \
             List[List[Union[str, datetime]]]:
@@ -266,8 +268,7 @@ class ImageHandler(metaclass=Singleton):
                     '/'.join(parent),
                     fs_object.info.name.name.decode('UTF-8'))
                 try:
-                    if fs_object.info.meta.type == \
-                            pytsk3.TSK_FS_META_TYPE_DIR:
+                    if fs_object.info.meta.type == TSK_FS_META_TYPE_DIR:
                         f_type = 'DIR'
                         file_ext = ''
                     else:
@@ -307,14 +308,14 @@ class ImageHandler(metaclass=Singleton):
         return data
 
     @staticmethod
-    def read_file(fs_object: pytsk3.File) -> bytes:
+    def read_file(fs_object: File) -> bytes:
         offset = 0
         size = getattr(fs_object.info.meta, "size", 0)
 
         return fs_object.read_random(offset, size)
 
     @staticmethod
-    def hash_file(fs_object: pytsk3.File) -> str:
+    def hash_file(fs_object: File) -> str:
         offset = 0
         buff_size = 1024 * 1024
         size = getattr(fs_object.info.meta, "size", 0)
