@@ -1,5 +1,4 @@
-import os
-
+from os import path
 from collections import defaultdict
 
 from asciimatics.event import KeyboardEvent
@@ -42,7 +41,7 @@ class FilepickerFrame(Frame):
         self.add_layout(layout)
 
         # Now populate it with the widgets we want to use.
-        self._list = FileBrowser(Widget.FILL_FRAME, os.path.abspath(
+        self._list = FileBrowser(Widget.FILL_FRAME, path.abspath(
             '.'), name='mc_list', on_select=self.selected)
         layout.add_widget(Label('Image file picker'), 1)
         layout.add_widget(Divider(), 1)
