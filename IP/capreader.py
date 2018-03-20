@@ -264,8 +264,8 @@ class PcapReader():
             -> Set[Tuple[str, str, str, datetime]]:
 
         return {(src, dst, prot, stamp) for (src, dst, prot, stamp) in
-            reader.extract_all(f) if any(ip in compare for ip in [src, dst]
-        )}
+                reader.extract_all(f) if any(ip in compare for ip in [src, dst]
+                                             )}
 
     def set_compatible(self):
         for f in self.files:
@@ -304,7 +304,7 @@ class PcapReader():
         """
 
         if len(self.pyshark_compatible) == 0 and \
-            len(self.dpkt_compatible) == 0:
+                len(self.dpkt_compatible) == 0:
 
             self.set_compatible()
 
@@ -350,7 +350,7 @@ class PcapReader():
         """
 
         if len(self.pyshark_compatible) == 0 and \
-            len(self.dpkt_compatible) == 0:
+                len(self.dpkt_compatible) == 0:
 
             self.set_compatible()
 
@@ -400,9 +400,9 @@ if __name__ == '__main__':
 
     pcapreader = PcapReader(
         [r"E:\converted.pcap",
-        r"E:\pcap_test.pcap",
-        r"E:\pcap_test1.pcap",
-        r"C:\Users\Kasper\Documents\HSL\Jaar 2\Periode 3\capture_test.pcapng"]
+         r"E:\pcap_test.pcap",
+         r"E:\pcap_test1.pcap",
+         r"C:\Users\Kasper\Documents\HSL\Jaar 2\Periode 3\capture_test.pcapng"]
     )
 
     fancy_print()
@@ -411,7 +411,7 @@ if __name__ == '__main__':
         print(hash)
 
     fancy_print()
-    ips=pcapreader.extract_ips()
+    ips = pcapreader.extract_ips()
     for ip in ips:
         print(ip)
     fancy_print()
