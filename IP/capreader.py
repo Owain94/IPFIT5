@@ -261,8 +261,8 @@ class PcapReader():
 
     @staticmethod
     def read_all(f: str, reader: Reader, compare: List[str]) \
-        -> Set[Tuple[str, str, str, datetime]]:
-        
+            -> Set[Tuple[str, str, str, datetime]]:
+
         return {(src, dst, prot, stamp) for (src, dst, prot, stamp) in
             reader.extract_all(f) if any(ip in compare for ip in [src, dst]
         )}
@@ -399,12 +399,20 @@ if __name__ == '__main__':
     import time
 
     pcapreader = PcapReader(
+<<<<<<< HEAD
         [r"E:\converted.pcap",
         r"E:\pcap_test.pcap",
         r"E:\pcap_test1.pcap",
         r"C:\Users\Kasper\Documents\HSL\Jaar 2\Periode 3\capture_test.pcapng"]
     )
     
+=======
+        [r"E:\converted.pcap", r"E:\pcap_test.pcap", r"E:\pcap_test1.pcap",
+         r"C:\Users\Kasper\Documents\HSL\Jaar 2\Periode 3\capture_test.pcapng"])
+    # r"E:\network_conerted.pcap"]
+    #, r"E:\ipfnet.pcapng01"
+
+>>>>>>> ac9d606bf9bf94feee54e27bf1db0a5064667da8
     fancy_print()
     hashes = pcapreader.hash()
     for hash in hashes:
