@@ -86,7 +86,8 @@ class DPKTReader(Reader):
         """
         # First try ipv4 and then ipv6
         '''
-        @TESTME: probably all ip-addresses found are ipv4, no need to try and except here.
+        @TESTME: probably all ip-addresses found are ipv4,
+            no need to try and except here.
         try:
             return inet_ntop(AF_INET, inet)
         except ValueError:
@@ -259,7 +260,9 @@ class PcapReader():
         return {ip for ip in reader.extract_ips(f)}
 
     @staticmethod
-    def read_all(f: str, reader: Reader, compare: List[str]) -> Set[Tuple[str, str, str, datetime]]:
+    def read_all(f: str, reader: Reader, compare: List[str]) \
+        -> Set[Tuple[str, str, str, datetime]]:
+        
         return {(src, dst, prot, stamp) for (src, dst, prot, stamp) in
                 reader.extract_all(f) if any(ip in compare for ip in [src, dst]
                                              )}
@@ -304,8 +307,8 @@ class PcapReader():
             self.set_compatible()
 
         # DPKT
-        extracted_sets = self.pool.map(partial(PcapReader.read,
-                                               reader=DPKTReader), self.dpkt_compatible)
+        extracted_sets = self.pool.map(
+            partial(PcapReader.read, reader=DPKTReader), self.dpkt_compatible)
 
         self.ips.update({ip for s in extracted_sets for ip in s})
 
@@ -391,7 +394,8 @@ if __name__ == '__main__':
     import time
 
     pcapreader = PcapReader(
-        [r"E:\converted.pcap", r"E:\pcap_test.pcap", r"E:\pcap_test1.pcap", r"C:\Users\Kasper\Documents\HSL\Jaar 2\Periode 3\capture_test.pcapng"])
+        [r"E:\converted.pcap", r"E:\pcap_test.pcap", r"E:\pcap_test1.pcap",
+        r"C:\Users\Kasper\Documents\HSL\Jaar 2\Periode 3\capture_test.pcapng"])
     # r"E:\network_conerted.pcap"]
     #, r"E:\ipfnet.pcapng01"
 
