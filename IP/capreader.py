@@ -17,7 +17,8 @@ from socket import inet_ntop, AF_INET, AF_INET6
 
 from warnings import filterwarnings
 
-filterwarnings( action="ignore")
+filterwarnings(action="ignore")
+
 
 class Reader(object, metaclass=abc.ABCMeta):
 
@@ -298,24 +299,22 @@ class PcapReader():
             Returns:
                 List: A list of unique IP's found in all given pcap-files
         """
-        
+
         if len(self.pyshark_compatible) == 0 and len(self.dpkt_compatible) == 0:
             self.set_compatible()
-        
-        #DPKT
+
+        # DPKT
         extracted_sets = self.pool.map(partial(PcapReader.read,
-                                reader=DPKTReader), self.dpkt_compatible)
-        
+                                               reader=DPKTReader), self.dpkt_compatible)
+
         self.ips.update({ip for s in extracted_sets for ip in s})
-        
-        #Pyshark
+
+        # Pyshark
         self.ips.update({
-                ip for f in self.pyshark_compatible for ip in
-                PcapReader.read(f, reader=PysharkReader)})
+            ip for f in self.pyshark_compatible for ip in
+            PcapReader.read(f, reader=PysharkReader)})
 
         return list(self.ips)
-
-
 
     def in_common(self, other: str) -> List[str]:
         """Returns a list of all ip-addresses that both occure in the pcaps,
@@ -342,20 +341,20 @@ class PcapReader():
             Returns:
                 Tuple[st, str, str, datetime]: (src-ip, dst-ip, protocoll, timestamp)
         """
-        
+
         if len(self.pyshark_compatible) == 0 and len(self.dpkt_compatible) == 0:
             self.set_compatible()
             print("Set self compatible")
 
-        #DPKT
+        # DPKT
         extracted_sets = self.pool.map(partial(
-                PcapReader.read_all,
-                reader=DPKTReader,
-                compare=self.similarities), self.dpkt_compatible)
+            PcapReader.read_all,
+            reader=DPKTReader,
+            compare=self.similarities), self.dpkt_compatible)
 
         tmp_timeline = [line for s in extracted_sets for line in s]
 
-        #Pyshark
+        # Pyshark
         tmp_timeline.extend(
             [line for f in self.pyshark_compatible for line in
                 PcapReader.read_all(
@@ -379,9 +378,9 @@ class PcapReader():
 
     def whoisinfo(self) -> List[Tuple[str, IPWhois]]:
 
-        self.whois_info = self.pool.map(PcapReader.whois_info_ip, self.similarities)
+        self.whois_info = self.pool.map(
+            PcapReader.whois_info_ip, self.similarities)
         return self.whois_info
-
 
 
 def fancy_print():
@@ -393,7 +392,7 @@ if __name__ == '__main__':
 
     pcapreader = PcapReader(
         [r"E:\converted.pcap", r"E:\pcap_test.pcap", r"E:\pcap_test1.pcap", r"C:\Users\Kasper\Documents\HSL\Jaar 2\Periode 3\capture_test.pcapng"])
-    #r"E:\network_conerted.pcap"]
+    # r"E:\network_conerted.pcap"]
     #, r"E:\ipfnet.pcapng01"
 
     fancy_print()
@@ -406,7 +405,7 @@ if __name__ == '__main__':
     for ip in ips:
         print(ip)
     fancy_print()
-    
+
     common = pcapreader.in_common('testjes.txt')
     for c in common:
         print(c)
