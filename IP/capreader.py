@@ -221,7 +221,7 @@ class Hasher():
 
         # On 0 bit files, it doesnt make sense to hash it.
         if s == 0:
-            return ""
+            return (fi, "")
 
         with open(fi, 'rb') as f:
             buf = f.read(Hasher.BLOCKSIZE)
@@ -263,9 +263,11 @@ class PcapReader():
     def read_all(f: str, reader: Reader, compare: List[str]) \
             -> Set[Tuple[str, str, str, datetime]]:
 
-        return {(src, dst, prot, stamp) for (src, dst, prot, stamp) in
-                reader.extract_all(f) if any(ip in compare for ip in [src, dst]
-                                             )}
+        return {
+            (src, dst, prot, stamp) for (src, dst, prot, stamp) 
+            in reader.extract_all(f) 
+            if any(ip in compare for ip in [src, dst])
+        }
 
     def set_compatible(self):
         for f in self.files:
