@@ -176,6 +176,9 @@ class Files(ModuleInterface):
     def timeline(self):
         results = []
 
+        total = len(self.data['files']) + 2
+        progress = 0
+
         for item in self.data['files']:
             create = item[5].strftime('%d-%m-%Y %H:%M:%S') if \
                 isinstance(item[5], datetime) else None
@@ -200,12 +203,18 @@ class Files(ModuleInterface):
                 if values[0] != values[1]:
                     results.append(copy(item))
 
+            progress += 1
+            self._progress['timeline'] = int(round(progress / total * 100))
+
         results.sort(
             key=lambda x: x[7] if isinstance(x[7], datetime) else datetime.min)
+        self._progress['timeline'] = int(round(progress / total * 100))
         results.sort(
             key=lambda x: x[6] if isinstance(x[6], datetime) else datetime.min)
+        self._progress['timeline'] = int(round(progress / total * 100))
         results.sort(
             key=lambda x: x[5] if isinstance(x[8], datetime) else datetime.min)
+        self._progress['timeline'] = 100
 
         self.data['timeline'] = results
 
