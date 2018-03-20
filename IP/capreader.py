@@ -264,8 +264,8 @@ class PcapReader():
         -> Set[Tuple[str, str, str, datetime]]:
         
         return {(src, dst, prot, stamp) for (src, dst, prot, stamp) in
-                reader.extract_all(f) if any(ip in compare for ip in [src, dst]
-                                             )}
+            reader.extract_all(f) if any(ip in compare for ip in [src, dst]
+        )}
 
     def set_compatible(self):
         for f in self.files:
@@ -303,7 +303,9 @@ class PcapReader():
                 List: A list of unique IP's found in all given pcap-files
         """
 
-        if len(self.pyshark_compatible) == 0 and len(self.dpkt_compatible) == 0:
+        if len(self.pyshark_compatible) == 0 and \
+            len(self.dpkt_compatible) == 0:
+            
             self.set_compatible()
 
         # DPKT
@@ -337,18 +339,21 @@ class PcapReader():
 
     def generate_timeline(self) -> List[
             Tuple[str, str, str, datetime]]:
-        """Generates a timeline of all ip-addresses in commen with the provided list
+        """Generates a timeline of all ip-addresses
+            in commen with the provided list
 
             Args:
                 -
             Returns:
-                Tuple[st, str, str, datetime]: (src-ip, dst-ip, protocoll, timestamp)
+                Tuple[st, str, str, datetime]:
+                    (src-ip, dst-ip, protocoll, timestamp)
         """
 
-        if len(self.pyshark_compatible) == 0 and len(self.dpkt_compatible) == 0:
+        if len(self.pyshark_compatible) == 0 and \
+            len(self.dpkt_compatible) == 0:
+            
             self.set_compatible()
-            print("Set self compatible")
-
+            
         # DPKT
         extracted_sets = self.pool.map(partial(
             PcapReader.read_all,
@@ -394,11 +399,12 @@ if __name__ == '__main__':
     import time
 
     pcapreader = PcapReader(
-        [r"E:\converted.pcap", r"E:\pcap_test.pcap", r"E:\pcap_test1.pcap",
-        r"C:\Users\Kasper\Documents\HSL\Jaar 2\Periode 3\capture_test.pcapng"])
-    # r"E:\network_conerted.pcap"]
-    #, r"E:\ipfnet.pcapng01"
-
+        [r"E:\converted.pcap",
+        r"E:\pcap_test.pcap",
+        r"E:\pcap_test1.pcap",
+        r"C:\Users\Kasper\Documents\HSL\Jaar 2\Periode 3\capture_test.pcapng"]
+    )
+    
     fancy_print()
     hashes = pcapreader.hash()
     for hash in hashes:
