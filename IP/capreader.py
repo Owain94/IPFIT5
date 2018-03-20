@@ -399,22 +399,14 @@ if __name__ == '__main__':
     import time
 
     pcapreader = PcapReader(
-<< << << < HEAD
         [r"E:\converted.pcap",
         r"E:\pcap_test.pcap",
         r"E:\pcap_test1.pcap",
         r"C:\Users\Kasper\Documents\HSL\Jaar 2\Periode 3\capture_test.pcapng"]
     )
 
-== == == =
-        [r"E:\converted.pcap", r"E:\pcap_test.pcap", r"E:\pcap_test1.pcap",
-         r"C:\Users\Kasper\Documents\HSL\Jaar 2\Periode 3\capture_test.pcapng"])
-    # r"E:\network_conerted.pcap"]
-    #, r"E:\ipfnet.pcapng01"
-
->> >>>> > ac9d606bf9bf94feee54e27bf1db0a5064667da8
     fancy_print()
-    hashes=pcapreader.hash()
+    hashes = pcapreader.hash()
     for hash in hashes:
         print(hash)
 
@@ -424,17 +416,17 @@ if __name__ == '__main__':
         print(ip)
     fancy_print()
 
-    common=pcapreader.in_common('testjes.txt')
+    common = pcapreader.in_common('testjes.txt')
     for c in common:
         print(c)
 
     fancy_print()
-    timeline=pcapreader.generate_timeline()
+    timeline = pcapreader.generate_timeline()
     for line in timeline:
         print(line)
 
     fancy_print()
-    whois=pcapreader.whoisinfo()
+    whois = pcapreader.whoisinfo()
     for (ip, info) in whois:
         print(ip)
         pprint(info)
