@@ -38,7 +38,7 @@ class MenuFrame(Frame):
             'IB': False
         }
 
-        self.image_handler = ImageHandler()
+        self.image_handler = None
         self.image_store = ImageStore().image_store
         credentials = CredentialStore()
         self.credentials_store = credentials.credential_store
@@ -189,6 +189,8 @@ class MenuFrame(Frame):
     def set_image(self):
         if self.image_store.get_state() == 'initial':
             return
+
+        self.image_handler = ImageHandler()
 
         if self.image_handler.check_file():
             self.form_data['IA'] = self.image_store.get_state()
