@@ -208,10 +208,10 @@ class Files(ModuleInterface):
 
         results.sort(
             key=lambda x: x[7] if isinstance(x[7], datetime) else datetime.min)
-        self._progress['timeline'] = int(round(progress / total * 100))
+        self._progress['timeline'] = int(round((total - 2) / total * 100))
         results.sort(
             key=lambda x: x[6] if isinstance(x[6], datetime) else datetime.min)
-        self._progress['timeline'] = int(round(progress / total * 100))
+        self._progress['timeline'] = int(round((total - 1) / total * 100))
         results.sort(
             key=lambda x: x[5] if isinstance(x[8], datetime) else datetime.min)
         self._progress['timeline'] = 100
