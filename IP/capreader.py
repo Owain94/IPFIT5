@@ -1,18 +1,24 @@
-import ipwhois
+from ipwhois import IPWhois
 import pyshark
 import dpkt
 
 import abc
 import hashlib
-import datetime
 import itertools
 from os import stat
 from enum import Enum
+from pprint import pprint
+from datetime import datetime
 from functools import partial
 from itertools import product
-from typing import Iterable, Tuple, List
 from multiprocessing import Pool, cpu_count
+from typing import Iterable, Tuple, List, Set
 from socket import inet_ntop, AF_INET, AF_INET6
+
+from warnings import filterwarnings
+
+filterwarnings(action="ignore")
+
 
 class Reader(object, metaclass=abc.ABCMeta):
 
@@ -45,7 +51,7 @@ class Reader(object, metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def extract_all(f: str) -> Iterable:
+    def extract_all(f: str) -> Iterable[Tuple[str, str, str, datetime]]:
         """Extracts the ip-addresses, used protocoll, and timestamp
             Args:
                 file: the pcap to be read
@@ -79,10 +85,15 @@ class DPKTReader(Reader):
                 str: Printable/readable IP address
         """
         # First try ipv4 and then ipv6
+        '''
+        @TESTME: probably all ip-addresses found are ipv4,
+            no need to try and except here.
         try:
             return inet_ntop(AF_INET, inet)
         except ValueError:
             return inet_ntop(AF_INET6, inet)
+        '''
+        return inet_ntop(AF_INET, inet)
 
     @staticmethod
     def to_protocoll(n: int) -> str:
@@ -119,7 +130,7 @@ class DPKTReader(Reader):
                 yield DPKTReader.inet_to_str(ip.dst)
 
     @staticmethod
-    def extract_all(f: str) -> Iterable:
+    def extract_all(f: str) -> Iterable[Tuple[str, str, str, datetime]]:
 
         with open(f, 'rb') as f:
             pcap = dpkt.pcap.Reader(f)
@@ -131,7 +142,7 @@ class DPKTReader(Reader):
                     continue
 
                 ip = eth.data
-                stamp = datetime.datetime.utcfromtimestamp(ts)
+                stamp = datetime.utcfromtimestamp(ts)
                 prot = DPKTReader.to_protocoll(ip.p)
 
                 src = DPKTReader.inet_to_str(ip.src)
@@ -163,7 +174,7 @@ class PysharkReader(Reader):
         PysharkReader.close_cap(cap)
 
     @staticmethod
-    def extract_all(f: str) -> Iterable:
+    def extract_all(f: str) -> Iterable[Tuple[str, str, str, datetime]]:
         cap = pyshark.FileCapture(f)
 
         for pkt in cap:
@@ -210,7 +221,7 @@ class Hasher():
 
         # On 0 bit files, it doesnt make sense to hash it.
         if s == 0:
-            return ""
+            return (fi, "")
 
         with open(fi, 'rb') as f:
             buf = f.read(Hasher.BLOCKSIZE)
@@ -239,18 +250,24 @@ class PcapReader():
         self.pyshark_compatible = []
         self.hashes = []
         self.timeline = []
+        self.whois_info = []
         self.ips = set()
         self.similarities = set()
+        self.pool = Pool(cpu_count())
 
     @staticmethod
-    def read(f: str, reader) -> set:
+    def read(f: str, reader: Reader) -> Set[str]:
         return {ip for ip in reader.extract_ips(f)}
 
     @staticmethod
-    def read_all(f: str, reader, compare: List[str]) -> set:
-        return {(src, dst, prot, stamp) for (src, dst, prot, stamp) in
-                reader.extract_all(f) if any(ip in compare for ip in [src, dst]
-                                             )}
+    def read_all(f: str, reader: Reader, compare: List[str]) \
+            -> Set[Tuple[str, str, str, datetime]]:
+
+        return {
+            (src, dst, prot, stamp) for (src, dst, prot, stamp)
+            in reader.extract_all(f)
+            if any(ip in compare for ip in [src, dst])
+        }
 
     def set_compatible(self):
         for f in self.files:
@@ -265,9 +282,8 @@ class PcapReader():
                     "None of the readers could read this pcapfile")
 
     def hash(self) -> List[Tuple[str, str]]:
-        p = Pool(cpu_count())
 
-        self.hashes = p.map(Hasher.hash, self.files)
+        self.hashes = self.pool.map(Hasher.hash, self.files)
 
         return self.hashes
 
@@ -279,51 +295,43 @@ class PcapReader():
     def all_pyshark_compatible(self) -> bool:
         return all(DPKTReader.is_compatible(f) for f in self.files)
 
-    def extract_ips(self, preference=ReadPreference.UNKNOWN) -> List[str]:
+    def extract_ips(self) -> List[str]:
         """Extracts the ip-addresses using a Reader. Also set's the instance's
         ips to the ip-addresses found, so they can be used in other methods.
 
             Args:
-                preference: with the preference it is possible to preference
-                one of the readers, by default it's UNKNOWN.
+                -
             Returns:
                 List: A list of unique IP's found in all given pcap-files
         """
-        DPKT = False
-        PYSHARK = False
 
-        if self.all_dpkt_compatible() and (
-                preference in [ReadPreference.UNKNOWN, ReadPreference.DPKT]):
-            DPKT = True
-            PYSHARK = False
+        if len(self.pyshark_compatible) == 0 and \
+                len(self.dpkt_compatible) == 0:
 
-        else:
-            DPKT = False
-            PYSHARK = True
+            self.set_compatible()
 
-        if DPKT:
-            print("Using DPKT")
+        # DPKT
+        extracted_sets = self.pool.map(
+            partial(PcapReader.read, reader=DPKTReader), self.dpkt_compatible)
 
-            p = Pool(cpu_count())
+        self.ips.update({ip for s in extracted_sets for ip in s})
 
-            tmp = p.map(partial(PcapReader.read,
-                                reader=DPKTReader), self.files)
-            self.ips = {ip for s in tmp for ip in s}
+        # Pyshark
+        self.ips.update({
+            ip for f in self.pyshark_compatible for ip in
+            PcapReader.read(f, reader=PysharkReader)})
 
-            return list(self.ips)
-
-        elif PYSHARK:
-            print("Using Pyshark")
-
-            self.ips = {
-                ip for f in self.files for ip in
-                PcapReader.read(f, reader=PysharkReader)}
-            return list(self.ips)
-
-        else:
-            raise CompatibleException("This is not supported YET")
+        return list(self.ips)
 
     def in_common(self, other: str) -> List[str]:
+        """Returns a list of all ip-addresses that both occure in the pcaps,
+            and in the given file
+
+            Args:
+                other: The file to be compared with
+            Returns:
+                List of common ip-addresses
+        """
         with open(other, 'r') as f:
             to_compare = {line.rstrip() for line in f.readlines()}
 
@@ -331,46 +339,58 @@ class PcapReader():
 
         return list(self.similarities)
 
-    def generate_timeline(self, preference=ReadPreference.UNKNOWN) -> List[
-            Tuple[str, str, str, str]]:
+    def generate_timeline(self) -> List[
+            Tuple[str, str, str, datetime]]:
+        """Generates a timeline of all ip-addresses
+            in commen with the provided list
 
-        DPKT = False
-        PYSHARK = False
+            Args:
+                -
+            Returns:
+                Tuple[st, str, str, datetime]:
+                    (src-ip, dst-ip, protocoll, timestamp)
+        """
 
-        if self.all_dpkt_compatible() and (
-                preference in [ReadPreference.UNKNOWN, ReadPreference.DPKT]):
-            DPKT = True
-            PYSHARK = False
+        if len(self.pyshark_compatible) == 0 and \
+                len(self.dpkt_compatible) == 0:
 
-        else:
-            DPKT = False
-            PYSHARK = True
+            self.set_compatible()
 
-        if DPKT:
-            p = Pool(cpu_count())
+        # DPKT
+        extracted_sets = self.pool.map(partial(
+            PcapReader.read_all,
+            reader=DPKTReader,
+            compare=self.similarities), self.dpkt_compatible)
 
-            tmp = p.map(partial(
-                PcapReader.read_all,
-                reader=DPKTReader,
-                compare=self.similarities), self.files)
+        tmp_timeline = [line for s in extracted_sets for line in s]
 
-            self.timeline = [line for s in tmp for line in s]
-
-        elif PYSHARK:
-            print("Using pyshark")
-            self.timeline = [
-                line for f in self.files for line in
+        # Pyshark
+        tmp_timeline.extend(
+            [line for f in self.pyshark_compatible for line in
                 PcapReader.read_all(
                     f,
                     reader=PysharkReader,
-                    compare=self.similarities)]
+                    compare=self.similarities)])
 
-        else:
-            raise CompatibleException("This is not supported YET")
-
-        sorted(self.timeline, key=lambda line: line[3])
+        self.timeline = sorted(tmp_timeline, key=lambda line: line[3])
 
         return self.timeline
+
+    @staticmethod
+    def whois_info_ip(ip: str) -> Tuple[str, IPWhois]:
+        try:
+            whois = IPWhois(ip)
+            results = whois.lookup_whois()
+
+            return (ip, results)
+        except Exception:
+            return ("", "")
+
+    def whoisinfo(self) -> List[Tuple[str, IPWhois]]:
+
+        self.whois_info = self.pool.map(
+            PcapReader.whois_info_ip, self.similarities)
+        return self.whois_info
 
 
 def fancy_print():
@@ -381,7 +401,11 @@ if __name__ == '__main__':
     import time
 
     pcapreader = PcapReader(
-        [r"E:\converted.pcap"])
+        [r"E:\converted.pcap",
+         r"E:\pcap_test.pcap",
+         r"E:\pcap_test1.pcap",
+         r"C:\Users\Kasper\Documents\HSL\Jaar 2\Periode 3\capture_test.pcapng"]
+    )
 
     fancy_print()
     hashes = pcapreader.hash()
@@ -393,35 +417,18 @@ if __name__ == '__main__':
     for ip in ips:
         print(ip)
     fancy_print()
+
     common = pcapreader.in_common('testjes.txt')
     for c in common:
         print(c)
 
     fancy_print()
-    timeline = pcapreader.generate_timeline(preference=ReadPreference.PYSHARK)
+    timeline = pcapreader.generate_timeline()
     for line in timeline:
         print(line)
-    '''
-    n = 0
 
-    s = time.time()
-    test_end = None
-    for (src, dst, prot, stamp) in PysharkReader.extract_all(
-            r"E:\converted.pcap"):
-        n += 1
-        test_end = stamp
-
-    print("Finished with {} items in {} seconds".format(n, time.time() - s))
-
-    m = 0
-    t = time.time()
-    test_start = None
-    for (src, dst, prot, stamp) in DPKTReader.extract_all(
-            r"E:\converted.pcap"):
-        if m == 0:
-            test_start = stamp
-        m += 1
-    print("Finished with {} items in {} seconds".format(m, time.time() - t))
-
-    print("{}: {}\t{}".format(test_end > test_start, test_end, test_start))
-    '''
+    fancy_print()
+    whois = pcapreader.whoisinfo()
+    for (ip, info) in whois:
+        print(ip)
+        pprint(info)
