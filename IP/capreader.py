@@ -396,8 +396,8 @@ class PcapReader():
             -> Set[Tuple[str, str, str, datetime]]:
 
         return {
-            (src, dst, prot, stamp) for (src, dst, prot, stamp) 
-            in reader.extract_all(f) 
+            (src, dst, prot, stamp) for (src, dst, prot, stamp)
+            in reader.extract_all(f)
             if any(ip in compare for ip in [src, dst])
         }
 
