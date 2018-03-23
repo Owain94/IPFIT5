@@ -12,7 +12,7 @@ from multiprocessing import Pool, cpu_count
 
 from langdetect import detect_langs
 
-from typing import List, Union, Dict
+from typing import List, Union
 
 lang_dict = {
     'af': 'Afrikaans',
@@ -87,12 +87,6 @@ class Files(ModuleInterface):
             'merged': []
         }
 
-        self._progress = {
-            'hashing': 0,
-            'timeline': 0,
-            'language': 0
-        }
-
         self.headers = [
             'Partition',
             'File',
@@ -123,21 +117,6 @@ class Files(ModuleInterface):
         if self.options['language']:
             self.language()
 
-    @property
-    def progress(self) -> Dict[str, int]:
-        d = {}
-
-        if self.options['hashing']:
-            d['hashing'] = self._progress['hashing']
-
-        if self.options['timeline']:
-            d['timeline'] = self._progress['timeline']
-
-        if self.options['language']:
-            d['language'] = self._progress['language']
-
-        return d
-
     def results(self) -> None:
         xlsx_writer = None
         count = int(self.options['hashing'])
@@ -161,6 +140,9 @@ class Files(ModuleInterface):
 
         if self.options['language']:
             self.save_language(xlsx_writer)
+
+        if count > 0:
+            xlsx_writer.close()
 
     def get_files(self) -> None:
         data = ImageHandler().files()
@@ -240,21 +222,19 @@ class Files(ModuleInterface):
         return file
 
     def language(self) -> None:
+        data = [x for x in self.data['files'] if x[3] == 'txt']
         with Pool(processes=cpu_count()) as pool:
             results = []
             [
                 pool.apply_async(self.detect_language,
                                  (x,),
                                  callback=results.append)
-                for x in self.data['files']
+                for x in data
             ]
 
-            while len(self.data['files']) != len(results):
-                self._progress['language'] = \
-                    int(round(len(results) / len(self.data['files']) * 100))
+            while len(data) != len(results):
                 sleep(0.05)
 
-        self._progress['language'] = 100
         self.data['language'] = results
 
     @staticmethod
@@ -280,11 +260,8 @@ class Files(ModuleInterface):
             ]
 
             while len(self.data['files']) != len(results):
-                self._progress['hashing'] = \
-                    int(round(len(results) / len(self.data['files']) * 100))
                 sleep(0.05)
 
-        self._progress['hashing'] = 100
         self.data['hashing'] = results
 
     def format_items(self, part: str) -> List[Union[str, int]]:
@@ -337,9 +314,9 @@ class Files(ModuleInterface):
         xlsx_writer.write_items('Hashes', self.format_items('hashing'))
 
     def save_timeline(self, xlsx_writer) -> None:
-        xlsx_writer.add_worksheet('test')
-        xlsx_writer.write_headers('test', self.headers)
-        xlsx_writer.write_items('test', self.format_items('timeline'))
+        xlsx_writer.add_worksheet('Timeline')
+        xlsx_writer.write_headers('Timeline', self.headers)
+        xlsx_writer.write_items('Timeline', self.format_items('timeline'))
 
     def save_language(self, xlsx_writer) -> None:
         xlsx_writer.add_worksheet('Language')

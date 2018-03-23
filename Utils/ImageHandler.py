@@ -16,7 +16,7 @@ from Utils.Logging.Logging import Logging
 from typing import List, Union, Tuple
 
 
-class Ewf(Img_Info, metaclass=Singleton):
+class Ewf(Img_Info):
     def __init__(self, ewf_handle):
         self.ewf_handle = ewf_handle
         # noinspection PyArgumentList
@@ -34,7 +34,7 @@ class Ewf(Img_Info, metaclass=Singleton):
         return self.ewf_handle.get_media_size()
 
 
-class ImageHandler(metaclass=Singleton):
+class ImageHandler:
     def __init__(self) -> None:
         self.logger = Logging(self.__class__.__name__).logger
         self.store = ImageStore().image_store
