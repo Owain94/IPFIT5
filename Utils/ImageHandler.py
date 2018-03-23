@@ -316,6 +316,9 @@ class ImageHandler:
 
     @staticmethod
     def hash_file(fs_object: File) -> str:
+        if fs_object.info.meta.type == TSK_FS_META_TYPE_DIR:
+            return ''
+
         offset = 0
         buff_size = 1024 * 1024
         size = getattr(fs_object.info.meta, "size", 0)
