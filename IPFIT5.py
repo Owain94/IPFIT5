@@ -1,9 +1,6 @@
 from collections import defaultdict
 from multiprocessing import Process
 from datetime import datetime
-from sys import platform
-from subprocess import call
-from pathlib import Path
 
 from asciimatics.widgets import Frame, Text, TextBox, Layout, Label, Divider, \
     CheckBox, Button, PopUpDialog
@@ -273,9 +270,6 @@ class MenuFrame(Frame):
             self._scene.add_effect(
                 PopUpDialog(self._screen, '\n'.join(msg), ['OK']))
         else:
-            self._scene.add_effect(
-                PopUpDialog(self._screen, 'Please wait', ['']))
-
             self.exec()
 
     def exec_photos(self, photos: any):
@@ -312,7 +306,8 @@ class MenuFrame(Frame):
             p.join()
 
         self._scene.add_effect(
-            PopUpDialog(self._screen, 'Klaar enzo', ['OK']))
+            PopUpDialog(self._screen, 'All jobs have finished!', ['OK'],
+                        on_close=self.quit_on_yes))
 
     def get_settings(self):
         settings = self.credentials_store.get_state()
@@ -325,21 +320,6 @@ class MenuFrame(Frame):
     def quit_on_yes(selected):
         if selected == 0:
             raise StopApplication('User requested exit')
-
-    @staticmethod
-    def finished(_):
-        MenuFrame.open_file(Path(__file__).joinpath('Output'))
-        raise StopApplication('Task done')
-
-    @staticmethod
-    def open_file(filename):
-        if platform == "win32":
-            # Windows bullshit...
-            from os import startfile
-            startfile(filename)
-        else:
-            opener = "open" if platform == "darwin" else "xdg-open"
-            call([opener, filename])
 
 
 def menu(screen, scene):
