@@ -65,7 +65,7 @@ class FilepickerFrame(Frame):
         # Just confirm whenever the user actually selects something.
         self.store.dispatch(ImageStoreActions.set_image(self._list.value))
         # self.logger.info('Image selected: {}'.format(self._list.value))
-        raise NextScene()
+        raise NextScene('Main')
 
     def process_event(self, event):
         # Do the key handling for this Frame.

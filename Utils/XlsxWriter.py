@@ -14,7 +14,7 @@ class XlsxWriter:
         self.headers = None
 
     @staticmethod
-    def get_save_path(name) -> str:
+    def get_save_path(name: str) -> str:
         # Make output folder
         config_path = Path(__file__).parent.parent.joinpath('Output')
         Path.mkdir(Path(config_path), exist_ok=True)
@@ -27,9 +27,9 @@ class XlsxWriter:
         Path.mkdir(Path(case_path), exist_ok=True)
 
         return str(
-            case_path.joinpath('{} - {}.xlsx'.format(
+            case_path.joinpath('{}-{}.xlsx'.format(
                 credentials.time,
-                name
+                name.replace(' ', '-')
             ))
         )
 
@@ -69,3 +69,6 @@ class XlsxWriter:
     def set_width(self, worksheet: str, width: List[int]) -> None:
         for i, w in enumerate(width):
             self.worksheets[worksheet].set_column(i, i, w + 1)
+
+    def close(self):
+        self.workbook.close()

@@ -1,4 +1,5 @@
 from collections import defaultdict
+from multiprocessing import Process
 from datetime import datetime
 
 from asciimatics.widgets import Frame, Text, TextBox, Layout, Label, Divider, \
@@ -44,7 +45,7 @@ class MenuFrame(Frame):
         self.credentials_store = credentials.credential_store
         self.logging_store = LoggingStore()
 
-        credentials.time = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+        credentials.time = datetime.now().strftime("%d-%m-%Y-%H%M%S")
 
         self.logging_store.logging_store.dispatch(
             LoggingStoreActions.add_log(
@@ -57,6 +58,7 @@ class MenuFrame(Frame):
 
         self.get_settings()
 
+        # noinspection PyArgumentList
         super(MenuFrame, self).__init__(screen,
                                         screen.height - 2,
                                         screen.width - 2,
@@ -65,6 +67,8 @@ class MenuFrame(Frame):
                                         has_border=True,
                                         can_scroll=False,
                                         name='IPFIT5')
+
+        self._screen = screen
 
         self.image_store.subscribe(lambda: self.set_image())
 
@@ -222,7 +226,7 @@ class MenuFrame(Frame):
             )
 
     def file_picker(self):
-        raise NextScene()
+        raise NextScene('FilePicker')
 
     def file_info(self):
         metadata = self.image_handler.encase_metadata()
@@ -259,24 +263,51 @@ class MenuFrame(Frame):
         if case is None or len(case[0]) is 0:
             msg.append('Case can not be empty')
 
-        if image is None or len(case[0]) is 0 or self.image_store.get_state() \
-                == 'initial':
+        if image is None or self.image_store.get_state() == 'initial':
             msg.append('No image selected')
 
         if len(msg) > 0:
             self._scene.add_effect(
                 PopUpDialog(self._screen, '\n'.join(msg), ['OK']))
-            return
+        else:
+            self.exec()
 
-        self.exec()
+    def exec_photos(self, photos: any):
+        pass
 
-    def exec(self):
-        # Files -- hashing
-        Files().run(
+    def exec_files(self, files: Files):
+        files.run(
             self.data.get('FA', False),
             self.data.get('FB', False),
             self.data.get('FC', False)
         )
+        files.results()
+
+    def exec_ip(self, ip: any):
+        pass
+
+    def exec(self):
+        # photos = Photos()
+        files = Files()
+        # ip = Ip()
+
+        execute_list = [
+            # Process(target=self.exec_photos, args=(photos,)),
+            Process(target=self.exec_files, args=(files,)),
+            # Process(target=self.exec_ip, args=(ip,))
+        ]
+
+        processes = []
+        for p in execute_list:
+            p.start()
+            processes.append(p)
+
+        for p in processes:
+            p.join()
+
+        self._scene.add_effect(
+            PopUpDialog(self._screen, 'All jobs have finished!', ['OK'],
+                        on_close=self.quit_on_yes))
 
     def get_settings(self):
         settings = self.credentials_store.get_state()
@@ -287,16 +318,15 @@ class MenuFrame(Frame):
 
     @staticmethod
     def quit_on_yes(selected):
-        # Yes is the first button
         if selected == 0:
             raise StopApplication('User requested exit')
 
 
 def menu(screen, scene):
     main_scene = \
-        Scene([MenuFrame(screen)], -1)
+        Scene([MenuFrame(screen)], -1, name='Main')
     file_picker_scene = \
-        Scene([FilepickerFrame(screen)], -1)
+        Scene([FilepickerFrame(screen)], -1, name='FilePicker')
 
     screen.play(
         [main_scene, file_picker_scene],

@@ -16,7 +16,7 @@ from Utils.Logging.Logging import Logging
 from typing import List, Union, Tuple
 
 
-class Ewf(Img_Info, metaclass=Singleton):
+class Ewf(Img_Info):
     def __init__(self, ewf_handle):
         self.ewf_handle = ewf_handle
         # noinspection PyArgumentList
@@ -34,7 +34,7 @@ class Ewf(Img_Info, metaclass=Singleton):
         return self.ewf_handle.get_media_size()
 
 
-class ImageHandler(metaclass=Singleton):
+class ImageHandler:
     def __init__(self) -> None:
         self.logger = Logging(self.__class__.__name__).logger
         self.store = ImageStore().image_store
@@ -316,6 +316,9 @@ class ImageHandler(metaclass=Singleton):
 
     @staticmethod
     def hash_file(fs_object: File) -> str:
+        if fs_object.info.meta.type == TSK_FS_META_TYPE_DIR:
+            return ''
+
         offset = 0
         buff_size = 1024 * 1024
         size = getattr(fs_object.info.meta, "size", 0)
