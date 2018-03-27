@@ -357,20 +357,24 @@ class Hasher():
 class CompatibleException(Exception):
     pass
 
+
 '''
 wrapper to automatically check if the PcapReader's instance
 has self.pyshark_compatible and self.dpkt_compatibe set.
 if not, sets them.
 '''
+
+
 def check_and_set_compatible(func):
     def wrapper(self, *args, **kwargs):
         if len(self.pyshark_compatible) == 0 and \
                 len(self.dpkt_compatible) == 0:
 
             self.set_compatible()
-            
+
         return func(self, *args, **kwargs)
     return wrapper
+
 
 class PcapReader():
 
@@ -455,7 +459,8 @@ class PcapReader():
         with open(other, 'r') as f:
             to_compare = {line.rstrip() for line in f.readlines()}
 
-            self.data["similarities"] = self.data["ip-list"].intersection(to_compare)
+            self.data["similarities"] = self.data["ip-list"].intersection(
+                to_compare)
 
         return list(self.data["similarities"])
 
