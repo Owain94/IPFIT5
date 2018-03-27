@@ -20,7 +20,6 @@ from warnings import filterwarnings
 
 filterwarnings(action="ignore")
 
-
 class Reader(object, metaclass=abc.ABCMeta):
 
     @staticmethod
@@ -85,15 +84,6 @@ class DPKTReader(Reader):
             Returns:
                 str: Printable/readable IP address
         """
-        # First try ipv4 and then ipv6
-        '''
-        @TESTME: probably all ip-addresses found are ipv4,
-            no need to try and except here.
-        try:
-            return inet_ntop(AF_INET, inet)
-        except ValueError:
-            return inet_ntop(AF_INET6, inet)
-        '''
         return inet_ntop(AF_INET, inet)
 
     @staticmethod
@@ -367,12 +357,20 @@ class Hasher():
 class CompatibleException(Exception):
     pass
 
+'''
+wrapper to automatically check if the PcapReader's instance
+has self.pyshark_compatible and self.dpkt_compatibe set.
+if not, sets them.
+'''
+def check_and_set_compatible(func):
+    def wrapper(self, *args, **kwargs):
+        if len(self.pyshark_compatible) == 0 and \
+                len(self.dpkt_compatible) == 0:
 
-class ReadPreference(Enum):
-    DPKT = 1
-    PYSHARK = 2
-    UNKNOWN = 3
-
+            self.set_compatible()
+            
+        return func(self, *args, **kwargs)
+    return wrapper
 
 class PcapReader():
 
@@ -380,12 +378,15 @@ class PcapReader():
         self.files = files
         self.dpkt_compatible = []
         self.pyshark_compatible = []
-        self.hashes = []
-        self.timeline = []
-        self.whois_info = []
-        self.ips = set()
-        self.similarities = set()
         self.pool = Pool(cpu_count())
+
+        self.data = {
+            "hashes": [],
+            "timeline": [],
+            "whois-info": [],
+            "ip-list": set(),
+            "similarities": set(),
+        }
 
     @staticmethod
     def read(f: str, reader: Reader) -> Set[str]:
@@ -415,18 +416,11 @@ class PcapReader():
 
     def hash(self) -> List[Tuple[str, str]]:
 
-        self.hashes = self.pool.map(Hasher.hash, self.files)
+        self.data["hashes"] = self.pool.map(Hasher.hash, self.files)
 
-        return self.hashes
+        return self.data["hashes"]
 
-    # checks if all files can be read with the dpkt reader
-    def all_dpkt_compatible(self) -> bool:
-        return all(DPKTReader.is_compatible(f) for f in self.files)
-
-    # checks if all files can be read with the pyshark reader
-    def all_pyshark_compatible(self) -> bool:
-        return all(DPKTReader.is_compatible(f) for f in self.files)
-
+    @check_and_set_compatible
     def extract_ips(self) -> List[str]:
         """Extracts the ip-addresses using a Reader. Also set's the instance's
         ips to the ip-addresses found, so they can be used in other methods.
@@ -436,24 +430,18 @@ class PcapReader():
             Returns:
                 List: A list of unique IP's found in all given pcap-files
         """
-
-        if len(self.pyshark_compatible) == 0 and \
-                len(self.dpkt_compatible) == 0:
-
-            self.set_compatible()
-
         # DPKT
         extracted_sets = self.pool.map(
             partial(PcapReader.read, reader=DPKTReader), self.dpkt_compatible)
 
-        self.ips.update({ip for s in extracted_sets for ip in s})
+        self.data["ip-list"].update({ip for s in extracted_sets for ip in s})
 
         # Pyshark
-        self.ips.update({
+        self.data["ip-list"].update({
             ip for f in self.pyshark_compatible for ip in
             PcapReader.read(f, reader=PysharkReader)})
 
-        return list(self.ips)
+        return list(self.data["ip-list"])
 
     def in_common(self, other: str) -> List[str]:
         """Returns a list of all ip-addresses that both occure in the pcaps,
@@ -467,10 +455,11 @@ class PcapReader():
         with open(other, 'r') as f:
             to_compare = {line.rstrip() for line in f.readlines()}
 
-            self.similarities = self.ips.intersection(to_compare)
+            self.data["similarities"] = self.data["ip-list"].intersection(to_compare)
 
-        return list(self.similarities)
+        return list(self.data["similarities"])
 
+    @check_and_set_compatible
     def generate_timeline(self) -> List[
             Tuple[str, str, str, datetime]]:
         """Generates a timeline of all ip-addresses
@@ -483,16 +472,11 @@ class PcapReader():
                     (src-ip, dst-ip, protocoll, timestamp)
         """
 
-        if len(self.pyshark_compatible) == 0 and \
-                len(self.dpkt_compatible) == 0:
-
-            self.set_compatible()
-
         # DPKT
         extracted_sets = self.pool.map(partial(
             PcapReader.read_all,
             reader=DPKTReader,
-            compare=self.similarities), self.dpkt_compatible)
+            compare=self.data["similarities"]), self.dpkt_compatible)
 
         tmp_timeline = [line for s in extracted_sets for line in s]
 
@@ -502,11 +486,11 @@ class PcapReader():
                 PcapReader.read_all(
                     f,
                     reader=PysharkReader,
-                    compare=self.similarities)])
+                    compare=self.data["similarities"])])
 
-        self.timeline = sorted(tmp_timeline, key=lambda line: line[3])
+        self.data["timeline"] = sorted(tmp_timeline, key=lambda line: line[3])
 
-        return self.timeline
+        return self.data["timeline"]
 
     @staticmethod
     def whois_info_ip(ip: str) -> Tuple[str, IPWhois]:
@@ -520,9 +504,9 @@ class PcapReader():
 
     def whoisinfo(self) -> List[Tuple[str, IPWhois]]:
 
-        self.whois_info = self.pool.map(
-            PcapReader.whois_info_ip, self.similarities)
-        return self.whois_info
+        self.data["whois-info"] = self.pool.map(
+            PcapReader.whois_info_ip, self.data["similarities"])
+        return self.data["whois-info"]
 
 
 def fancy_print():
@@ -530,13 +514,12 @@ def fancy_print():
 
 
 if __name__ == '__main__':
-
-    pcapreader = PcapReader(
-        [r"E:\converted.pcap",
-         r"E:\pcap_test.pcap",
-         r"E:\pcap_test1.pcap",
-         r"C:\Users\Kasper\Documents\HSL\Jaar 2\Periode 3\capture_test.pcapng"]
-    )
+    pcapreader = PcapReader([
+        r"E:\converted.pcap",
+        r"E:\pcap_test.pcap",
+        r"E:\pcap_test1.pcap",
+        r"C:\Users\Kasper\Documents\HSL\Jaar 2\Periode 3\capture_test.pcapng"
+    ])
 
     fancy_print()
     hashes = pcapreader.hash()
