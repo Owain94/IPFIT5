@@ -9,7 +9,6 @@ from sys import setrecursionlimit
 from pathlib import Path as PathlibPath
 from datetime import datetime
 
-from Utils.Singleton import Singleton
 from Utils.Store.Image import ImageStore
 from Utils.Logging.Logging import Logging
 
