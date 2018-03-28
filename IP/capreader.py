@@ -73,18 +73,19 @@ class Reader(object, metaclass=abc.ABCMeta):
         '''
         if func is None:
             return partial(Reader.compatible, pyshark=pyshark, dpkt=dpkt)
-    
+
         @try_open
         def pysharkcompatible(f):
             return pyshark(f)
-    
+
         @try_open
         def dpktcompatible(f):
             return dpkt(f)
-    
+
         def wrapper(self, *args, **kwargs):
-            return func(self, pyshark = pysharkcompatible, dpkt = dpktcompatible)
+            return func(self, pyshark=pysharkcompatible, dpkt=dpktcompatible)
         return wrapper
+
 
 def try_open(func):
     '''
@@ -427,8 +428,8 @@ class PcapReader():
             if any(ip in compare for ip in [src, dst])
         }
 
-    @Reader.compatible(pyshark = lambda f: pyshark.FileCapture(f), \
-        dpkt = lambda f: dpkt.pcap.Reader(f, keep_packets=False))
+    @Reader.compatible(pyshark=lambda f: pyshark.FileCapture(f),
+                       dpkt=lambda f: dpkt.pcap.Reader(f, keep_packets=False))
     def set_compatible(self, pyshark, dpkt):
         for f in self.files:
             if dpkt(f):
