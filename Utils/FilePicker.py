@@ -1,15 +1,15 @@
-from os import path
 from collections import defaultdict
+from os import path
 
 from asciimatics.event import KeyboardEvent
+from asciimatics.exceptions import NextScene
+from asciimatics.screen import Screen
 from asciimatics.widgets import Frame, Layout, FileBrowser, Widget, Label, \
     Divider
-from asciimatics.screen import Screen
-from asciimatics.exceptions import NextScene
 
-from Utils.Store.Image import ImageStore
 from Utils.Logging.Logging import Logging
 from Utils.Store.Actions.ImageStoreActions import ImageStoreActions
+from Utils.Store.Image import ImageStore
 
 
 class FilepickerFrame(Frame):

@@ -1,19 +1,16 @@
+from datetime import datetime
+from hashlib import sha256
+from os import sep
+from pathlib import Path as PathlibPath
 from pyewf import handle, glob
 from pytsk3 import Img_Info, Volume_Info, FS_Info, Directory, File, \
     TSK_VS_PART_INFO, TSK_IMG_TYPE_EXTERNAL, TSK_FS_META_TYPE_DIR
-
-from os import sep
 from re import search, I
-from hashlib import sha256
 from sys import setrecursionlimit
-from pathlib import Path as PathlibPath
-from datetime import datetime
-
-from Utils.Singleton import Singleton
-from Utils.Store.Image import ImageStore
-from Utils.Logging.Logging import Logging
-
 from typing import List, Union, Tuple
+
+from Utils.Logging.Logging import Logging
+from Utils.Store.Image import ImageStore
 
 
 class Ewf(Img_Info):

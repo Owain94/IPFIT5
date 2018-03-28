@@ -1,13 +1,12 @@
-from pydux import create_store
-
-from pathlib import Path
 from os import linesep
+from pathlib import Path
+from typing import Dict, Union
+
+from pydux import create_store
 
 from Utils.Debounce import debounce
 from Utils.Singleton import Singleton
 from Utils.Store.Actions.CredentialsStoreActions import CredentialsStoreActions
-
-from typing import Dict, Union
 
 
 class CredentialStore(metaclass=Singleton):
