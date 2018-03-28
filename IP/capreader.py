@@ -63,17 +63,47 @@ class Reader(object, metaclass=abc.ABCMeta):
             "This returns a generator that yields tuples of (ip.src, ip.dst,"
             "protocoll, timestamp)")
 
+    @staticmethod
+    def compatible(func=None, *, pyshark, dpkt):
+        '''
+        Decorator that wraps up the reading for 2 given pcap readers.
+        `pyshark` and `dpkt` are both supposed to be lambda's, taking a file,
+        and opening it. These lambda's are wrapped in @try_open,
+        to check for failure or succes
+        '''
+        if func is None:
+            return partial(Reader.compatible, pyshark=pyshark, dpkt=dpkt)
+    
+        @try_open
+        def pysharkcompatible(f):
+            return pyshark(f)
+    
+        @try_open
+        def dpktcompatible(f):
+            return dpkt(f)
+    
+        def wrapper(self, *args, **kwargs):
+            return func(self, pyshark = pysharkcompatible, dpkt = dpktcompatible)
+        return wrapper
+
+def try_open(func):
+    '''
+    Decorator to try and read a pcap for any given reader.
+    On succes, return 'true',
+    on failure, return 'false'
+    '''
+    def wrapper(*args, **kwargs):
+        f = args[0]
+        try:
+            with open(args[0], 'rb') as f:
+                func(f, **kwargs)
+                return True
+        except Exception:
+            return False
+    return wrapper
+
 
 class DPKTReader(Reader):
-
-    @staticmethod
-    def is_compatible(f: str) -> bool:
-        with open(f, 'rb') as f:
-            try:
-                _ = dpkt.pcap.Reader(f)
-                return True
-            except Exception:
-                return False
 
     @staticmethod
     def inet_to_str(inet) -> str:
@@ -274,14 +304,6 @@ class DPKTReader(Reader):
 
 class PysharkReader(Reader):
     @staticmethod
-    def is_compatible(f: str) -> bool:
-        try:
-            _ = pyshark.FileCapture(f, keep_packets=False)
-            return True
-        except Exception:
-            return False
-
-    @staticmethod
     def extract_ips(f: str) -> Iterable[Tuple[str, str]]:
         cap = pyshark.FileCapture(f, keep_packets=False)
 
@@ -358,14 +380,13 @@ class CompatibleException(Exception):
     pass
 
 
-'''
-wrapper to automatically check if the PcapReader's instance
-has self.pyshark_compatible and self.dpkt_compatibe set.
-if not, sets them.
-'''
-
-
 def check_and_set_compatible(func):
+    '''
+    wrapper to automatically check if the PcapReader's instance
+    has self.pyshark_compatible and self.dpkt_compatibe set.
+    if not, sets them.
+    '''
+
     def wrapper(self, *args, **kwargs):
         if len(self.pyshark_compatible) == 0 and \
                 len(self.dpkt_compatible) == 0:
@@ -406,12 +427,14 @@ class PcapReader():
             if any(ip in compare for ip in [src, dst])
         }
 
-    def set_compatible(self):
+    @Reader.compatible(pyshark = lambda f: pyshark.FileCapture(f), \
+        dpkt = lambda f: dpkt.pcap.Reader(f, keep_packets=False))
+    def set_compatible(self, pyshark, dpkt):
         for f in self.files:
-            if DPKTReader.is_compatible(f):
+            if dpkt(f):
                 self.dpkt_compatible.append(f)
 
-            elif PysharkReader.is_compatible(f):
+            elif pyshark(f):
                 self.pyshark_compatible.append(f)
 
             else:
