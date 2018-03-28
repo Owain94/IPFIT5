@@ -5,9 +5,16 @@ from Utils.ImageHandler import ImageHandler
 
 from Utils.XlsxWriter import XlsxWriter
 
+from io import BytesIO
 from time import sleep
-from copy import copy, deepcopy
+from os import SEEK_END
+from gzip import GzipFile
+from hashlib import sha256
 from datetime import datetime
+from copy import copy, deepcopy
+from zlib import error as zlib_error
+from tarfile import TarFile
+from zipfile import ZipFile, BadZipFile
 from multiprocessing import Pool, cpu_count
 
 from langdetect import detect_langs
@@ -144,21 +151,221 @@ class Files(ModuleInterface):
         if count > 0:
             xlsx_writer.close()
 
+    @staticmethod
+    def zipped_sha_hash(file):
+        sha256_sum = sha256()
+
+        buf = file.read()
+        sha256_sum.update(buf)
+
+        return sha256_sum.hexdigest()
+
+    @staticmethod
+    def zipped_language(file, raw=False):
+        languages_string = ''
+        text = file.readlines()
+        decoded = ''
+        if raw:
+            decoded = file
+        else:
+            for i in text:
+                try:
+                    decoded += i.decode('utf-8')
+                except UnicodeDecodeError:
+                    try:
+                        decoded += i.decode('utf-8')
+                    except UnicodeDecodeError:
+                        pass
+
+        languages = detect_langs(decoded)
+
+        if languages is not None:
+            languages_string = ', '.join(
+                ['{:.2f}% {}'.format(
+                    float(str(lang)[3:]) * 100,
+                    lang_dict[str(lang)[:2]]
+                ) for lang in languages])
+
+        return languages_string
+
+    def zip_file(self, file, partition, _, path):
+        lst = []
+
+        try:
+            with ZipFile(file) as zf:
+                for file_info in zf.infolist():
+                    try:
+                        filename = file_info.filename.split('/')[-1] \
+                            if '.' in file_info.filename else \
+                            file_info.filename.replace('/', '')
+
+                        extension = file_info.filename.split('.')[-1].lower() \
+                            if '.' in file_info.filename else ''
+
+                        fd = 'FILE' \
+                            if file_info.compress_size != 0 \
+                               and file_info.file_size != 0 \
+                            else 'DIR'
+
+                        size = '{} / {}'.format(file_info.compress_size,
+                                                file_info.file_size) \
+                            if file_info.compress_size != 0 \
+                               and file_info.file_size != 0 \
+                            else ''
+
+                        file_path = '{}/{}'.format(path, file_info.filename)
+
+                        item = [
+                            partition,
+                            filename,
+                            extension,
+                            fd,
+                            '',
+                            datetime(*file_info.date_time),
+                            '',
+                            size,
+                            file_path
+                        ]
+
+                        if fd == 'FILE':
+                            file = BytesIO(zf.read(file_info))
+                            item.append(self.zipped_sha_hash(file))
+                        else:
+                            item.append('')
+
+                        if extension == 'txt':
+                            item.append(
+                                self.zipped_language(
+                                    BytesIO(zf.read(file_info.filename))))
+                        else:
+                            item.append('')
+
+                        lst.append(item)
+                    except zlib_error:
+                        continue
+                    except BadZipFile:
+                        continue
+        except BadZipFile:
+            pass
+
+        return lst
+
+    def tar_file(self, file, partition, _, path):
+        lst = []
+
+        with TarFile(fileobj=file) as zf:
+            for member in zf.getnames():
+                if '._' not in member:
+                    f = zf.extractfile(member)
+
+                    filename = member.split('/')[-1] if '.' in member else \
+                        member.replace('/', '')
+
+                    extension = member.split('.')[-1].lower() \
+                        if '.' in member else ''
+
+                    f.seek(0, SEEK_END)
+
+                    item = [
+                        partition,
+                        filename,
+                        extension,
+                        'FILE',
+                        '',
+                        '',
+                        '',
+                        f.tell(),
+                        '{}/{}'.format(path, member),
+                        self.zipped_sha_hash(f)
+                    ]
+
+                    if extension == 'txt':
+                        item.append(self.zipped_language(f.read()))
+                    else:
+                        item.append('')
+
+                    lst.append(item)
+
+        return lst
+
+    def gzip_file(self, file, partition, filename, path):
+        lst = []
+        with GzipFile(fileobj=file) as zf:
+            file_content = BytesIO(zf.read())
+
+            name = ImageHandler().rreplace(filename, '.gz', '')
+
+            extension = name.split('.')[-1].lower() \
+                if '.' in name else ''
+
+            item = [
+                partition,
+                name,
+                extension,
+                'FILE',
+                '',
+                '',
+                '',
+                len(file_content.getbuffer()),
+                '{}/{}'.format(path, name),
+                self.zipped_sha_hash(file_content)
+            ]
+
+            if extension == 'txt':
+                item.append(self.zipped_language(file_content))
+            else:
+                item.append('')
+
+            lst.append(item)
+
+            if extension == 'tar':
+                tar = self.tar_file(file_content, partition, filename, path)
+
+                for item in tar:
+                    lst.append(item)
+
+        return lst
+
+    def compressed_files(self, file):
+        stream = ImageHandler().single_file(int(file[0][-1]),
+                                            ImageHandler.rreplace(
+                                                file[8],
+                                                file[1],
+                                                ''),
+                                            file[1])
+
+        return {
+            'zip': self.zip_file,
+            'gz': self.gzip_file
+        }.get(file[2], 'pass')(BytesIO(stream), file[0], file[1], file[8])
+
     def get_files(self) -> None:
         data = ImageHandler().files()
-        file_list = []
 
-        for i, f in enumerate(data[0]):
-            f[0:0] = [i]
-            file_list.append(f)
+        lst = []
+        count = 0
+        for item in data[0]:
+            item[0:0] = [count]
+            count += 1
+            lst.append(item)
+            if any(ext == item[3] for ext in ['zip', 'gz']) \
+                    and not item[2].startswith('._'):
+                for i in self.compressed_files(item[1:]):
+                    i[0:0] = [count]
+                    count += 1
+                    lst.append(i)
 
-        self.data['files'] = file_list
+        # file_list = []
+        #
+        # for i, f in enumerate(data[0]):
+        #     f[0:0] = [i]
+        #     file_list.append(f)
+
+        self.data['files'] = lst
 
     # noinspection PyUnresolvedReferences
     def timeline(self):
         results = []
-
-        total = len(self.data['files']) + 2
 
         for item in self.data['files']:
             create = item[5].strftime('%d-%m-%Y %H:%M:%S') if \
@@ -189,13 +396,16 @@ class Files(ModuleInterface):
         results.sort(
             key=lambda x: x[6] if isinstance(x[6], datetime) else datetime.min)
         results.sort(
-            key=lambda x: x[5] if isinstance(x[8], datetime) else datetime.min)
+            key=lambda x: x[5] if isinstance(x[5], datetime) else datetime.min)
 
         self.data['timeline'] = results
 
     @staticmethod
     def detect_language(file: List[Union[str, datetime]]) \
             -> List[Union[str, datetime]]:
+        if len(file) > 10:
+            return file
+
         languages = None
         languages_string = ''
         if file[3].lower() == 'txt':
@@ -241,6 +451,9 @@ class Files(ModuleInterface):
 
     @staticmethod
     def hash(file: List[Union[str, datetime]]) -> List[Union[str, datetime]]:
+        if len(file) > 10:
+            return file
+
         sha_sum = ImageHandler().single_file(int(file[1][-1]),
                                              ImageHandler.rreplace(
                                                  file[9],
@@ -264,28 +477,78 @@ class Files(ModuleInterface):
             while len(self.data['files']) != len(results):
                 sleep(0.05)
 
-        self.data['hashing'] = results
+        self.data['hashing'] = [x for x in results if x[10] != '']
 
     def format_items(self, part: str) -> List[Union[str, int]]:
         items = []
 
         if part == 'hashing' or part == 'language':
             data = sorted(self.data[part])
+        elif part == 'combined':
+            data = self.combined_data()
         else:
             data = deepcopy(self.data[part])
 
         for item in data:
             item.pop(0)
+            if part == 'files' or part == 'timeline':
+                if len(item) > 9:
+                    del item[9:11]
+            if part == 'hashing':
+                if len(item) > 10:
+                    item.pop(10)
+            if part == 'language':
+                if len(item) > 10:
+                    item.pop(9)
+
             item[4] = item[4].strftime('%d-%m-%Y %H:%M:%S') if \
                 isinstance(item[4], datetime) else ''
             item[5] = item[5].strftime('%d-%m-%Y %H:%M:%S') if \
                 isinstance(item[5], datetime) else ''
             item[6] = item[6].strftime('%d-%m-%Y %H:%M:%S') if \
                 isinstance(item[6], datetime) else ''
+            item[7] = str(item[7])
 
             items.append(item)
 
         return items
+
+    def combined_data(self):
+        if self.options['timeline']:
+            data = deepcopy(self.data['timeline'])
+        else:
+            data = deepcopy(self.data['files'])
+
+        lst = []
+
+        for item in data:
+            if len(item) > 10:
+                if not self.options['hashing']:
+                    item.pop(10)
+
+                if not self.options['language'] and not \
+                        self.options['hashing']:
+                    item.pop(10)
+                elif not self.options['language']:
+                    item.pop(11)
+            else:
+                if self.options['hashing']:
+                    y = [i for i in self.data['hashing'] if i[0] == item[0]]
+                    if y:
+                        item.append(y[0][10])
+                    else:
+                        item.append('')
+
+                if self.options['language']:
+                    y = [i for i in self.data['language'] if i[0] == item[0]]
+                    if y:
+                        item.append(y[0][10])
+                    else:
+                        item.append('')
+
+            lst.append(item)
+
+        return lst
 
     def save_merged(self, xlsx_writer) -> None:
         lst = []
@@ -301,6 +564,7 @@ class Files(ModuleInterface):
             *self.headers,
             *lst
         ])
+        xlsx_writer.write_items('Combined', self.format_items('combined'))
 
     def save_files(self, xlsx_writer) -> None:
         xlsx_writer.add_worksheet('Files')
