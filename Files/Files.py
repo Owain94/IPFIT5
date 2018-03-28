@@ -201,7 +201,7 @@ class Files(ModuleInterface):
 
                         fd = 'FILE' \
                             if file_info.compress_size != 0 \
-                               and file_info.file_size != 0 \
+                            and file_info.file_size != 0 \
                             else 'DIR'
 
                         size = '{} / {}'.format(file_info.compress_size,
