@@ -1,10 +1,9 @@
-from Utils.Store.Credentials import CredentialStore
+from pathlib import Path
+from typing import List
 
 from xlsxwriter import Workbook
 
-from pathlib import Path
-
-from typing import List
+from Utils.Store.Credentials import CredentialStore
 
 
 class XlsxWriter:
