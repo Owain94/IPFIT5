@@ -1,9 +1,9 @@
+from typing import Dict
+
 from pydux import create_store
 
 from Utils.Singleton import Singleton
 from Utils.Store.Actions.ImageStoreActions import ImageStoreActions
-
-from typing import Dict
 
 
 class ImageStore(metaclass=Singleton):

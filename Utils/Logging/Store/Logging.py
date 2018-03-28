@@ -1,15 +1,12 @@
+from datetime import datetime
+from typing import Dict, Union
+
 from pydux import create_store
 
-from datetime import datetime
-
-from Utils.Singleton import Singleton
-from Utils.XlsxWriter import XlsxWriter
-
-from Utils.Store.Credentials import CredentialStore
-
 from Utils.Logging.Store.Actions.LoggingActions import LoggingStoreActions
-
-from typing import Dict, Union
+from Utils.Singleton import Singleton
+from Utils.Store.Credentials import CredentialStore
+from Utils.XlsxWriter import XlsxWriter
 
 
 class LoggingStore(metaclass=Singleton):
