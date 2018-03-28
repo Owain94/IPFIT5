@@ -1,25 +1,22 @@
-from Interfaces.ModuleInterface import ModuleInterface
-
-from Utils.Logging.Logging import Logging
-from Utils.ImageHandler import ImageHandler
-
-from Utils.XlsxWriter import XlsxWriter
-
-from io import BytesIO
-from time import sleep
-from os import SEEK_END
+from copy import copy, deepcopy
+from datetime import datetime
 from gzip import GzipFile
 from hashlib import sha256
-from datetime import datetime
-from copy import copy, deepcopy
-from zlib import error as zlib_error
-from tarfile import TarFile
-from zipfile import ZipFile, BadZipFile
+from io import BytesIO
 from multiprocessing import Pool, cpu_count
+from os import SEEK_END
+from tarfile import TarFile
+from time import sleep
+from typing import List, Union
+from zipfile import ZipFile, BadZipFile
+from zlib import error as zlib_error
 
 from langdetect import detect_langs
 
-from typing import List, Union
+from Interfaces.ModuleInterface import ModuleInterface
+from Utils.ImageHandler import ImageHandler
+from Utils.Logging.Logging import Logging
+from Utils.XlsxWriter import XlsxWriter
 
 lang_dict = {
     'af': 'Afrikaans',

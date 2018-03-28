@@ -1,28 +1,24 @@
 from collections import defaultdict
-from multiprocessing import Process
 from datetime import datetime
-
-from asciimatics.widgets import Frame, Text, TextBox, Layout, Label, Divider, \
-    CheckBox, Button, PopUpDialog
-from asciimatics.scene import Scene
-from asciimatics.screen import Screen
-from asciimatics.exceptions import ResizeScreenError, NextScene, \
-    StopApplication
+from multiprocessing import Process
 from sys import exit as exit_application
 
-from Utils.Store.Image import ImageStore
-from Utils.Store.Credentials import CredentialStore
-from Utils.Logging.Store.Logging import LoggingStore
-
-from Utils.FilePicker import FilepickerFrame
-
-from Utils.Logging.Store.Logging import LoggingStoreActions
-from Utils.Store.Actions.ImageStoreActions import ImageStoreActions
-from Utils.Store.Actions.CredentialsStoreActions import CredentialsStoreActions
-
-from Utils.ImageHandler import ImageHandler
+from asciimatics.exceptions import ResizeScreenError, NextScene, \
+    StopApplication
+from asciimatics.scene import Scene
+from asciimatics.screen import Screen
+from asciimatics.widgets import Frame, Text, TextBox, Layout, Label, Divider, \
+    CheckBox, Button, PopUpDialog
 
 from Files.Files import Files
+from Utils.FilePicker import FilepickerFrame
+from Utils.ImageHandler import ImageHandler
+from Utils.Logging.Store.Logging import LoggingStore
+from Utils.Logging.Store.Logging import LoggingStoreActions
+from Utils.Store.Actions.CredentialsStoreActions import CredentialsStoreActions
+from Utils.Store.Actions.ImageStoreActions import ImageStoreActions
+from Utils.Store.Credentials import CredentialStore
+from Utils.Store.Image import ImageStore
 
 
 class MenuFrame(Frame):
