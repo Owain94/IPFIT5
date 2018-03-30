@@ -115,7 +115,7 @@ class XlsxWriter:
         for i, w in enumerate(width):
             self.worksheets[worksheet].set_column(i, i, w + 1)
 
-    def close(self):
+    def close(self) -> None:
         """
         Close the XLSX workbook object
 
