@@ -177,7 +177,7 @@ class Files(ModuleInterface):
         return sha256_sum.hexdigest()
 
     @staticmethod
-    def zipped_language(file, raw=False):
+    def zipped_language(file: any, raw: bool=False) -> str:
         """
         Get the language of a text file inside a compressed file
 
@@ -212,7 +212,8 @@ class Files(ModuleInterface):
 
         return languages_string
 
-    def zip_file(self, file, partition, _, path):
+    def zip_file(self, file: object, partition: str, _: any, path: str) -> \
+            List[Union[str, datetime]]:
         """
         Extract all files in a zip file
 
@@ -284,7 +285,8 @@ class Files(ModuleInterface):
 
         return lst
 
-    def tar_file(self, file, partition, _, path):
+    def tar_file(self, file: object, partition: str, _: any, path: str) -> \
+            List[Union[str, datetime]]:
         """
         Extract all files in a tarball
 
@@ -332,7 +334,8 @@ class Files(ModuleInterface):
 
         return lst
 
-    def gzip_file(self, file, partition, filename, path):
+    def gzip_file(self, file: object, partition: str,
+                  filename: str, path: str) -> List[str]:
         """
         Extract a gzipped file
 
@@ -380,7 +383,7 @@ class Files(ModuleInterface):
 
         return lst
 
-    def compressed_files(self, file):
+    def compressed_files(self, file: List[Union[str, datetime]]):
         """
         Wrapper to extract data from compressed files
 
@@ -420,12 +423,6 @@ class Files(ModuleInterface):
                     i[0:0] = [count]
                     count += 1
                     lst.append(i)
-
-        # file_list = []
-        #
-        # for i, f in enumerate(data[0]):
-        #     f[0:0] = [i]
-        #     file_list.append(f)
 
         self.data['files'] = lst
 
