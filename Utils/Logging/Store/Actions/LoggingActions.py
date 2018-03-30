@@ -13,6 +13,16 @@ class LoggingStoreActions:
                 how: str,
                 result: str) -> \
             Dict[str, Union[str, Dict[str, Union[datetime, str]]]]:
+        """
+        Add log action
+
+        :param what: What
+        :param why: Why
+        :param how: How
+        :param result: Result
+
+        :return: Action result
+        """
         return {
             'type': LoggingStoreActions.ADD_LOG,
             'log': {
@@ -25,6 +35,11 @@ class LoggingStoreActions:
 
     @staticmethod
     def save_to_disk():
+        """
+        Save to disk action
+
+        :return: Action result
+        """
         return {
             'type': LoggingStoreActions.SAVE_TO_DISK
         }
