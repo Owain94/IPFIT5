@@ -34,7 +34,7 @@ class LoggingStore(metaclass=Singleton):
     def format_logs(self):
         """
         Format the log items
-        
+
         :return: Formatted logs
         """
         credentials = CredentialStore().credential_store.get_state()
