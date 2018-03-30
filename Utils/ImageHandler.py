@@ -21,13 +21,33 @@ class Ewf(Img_Info):
                                   type=TSK_IMG_TYPE_EXTERNAL)
 
     def close(self):
+        """
+        Closes the ewf handle
+
+        :return: None
+        """
         self.ewf_handle.close()
 
+    # noinspection PyUnusedLocal
     def read(self, offset, size, **kwargs):
+        """
+        Read the ewf file
+
+        :param offset: Offset in bytes
+        :param size: Size in bytes
+        :param kwargs: Kwargs
+
+        :return: File in bytes
+        """
         self.ewf_handle.seek(offset)
         return self.ewf_handle.read(size)
 
     def get_size(self):
+        """
+        Get size of ewf
+
+        :return: Size in bytes
+        """
         return self.ewf_handle.get_media_size()
 
 
@@ -58,10 +78,20 @@ class ImageHandler:
                 self.image_handle = Img_Info(self.store.get_state())
 
     def check_file_path(self) -> bool:
+        """
+        Check if the given file exists on the computer
+
+        :return: Whether the file exists or not
+        """
         image_path = PathlibPath(self.store.get_state())
         return image_path.is_file()
 
     def check_file(self) -> bool:
+        """
+        Check if the file could be read
+
+        :return: Whether file could be read or not
+        """
         try:
             self.info()
         except OSError:
@@ -69,12 +99,22 @@ class ImageHandler:
         return True
 
     def info(self):
+        """
+        Get volume info from image
+
+        :return: Volume info object
+        """
         try:
             return Volume_Info(self.image_handle)
         except RuntimeError:
             return None
 
     def encase_metadata(self) -> Union[List, List[Union[str, str]]]:
+        """
+        Get all metadata from an ewf file
+
+        :return: All ewf metadata
+        """
         if not self.encase_image(self.ext):
             return []
 
@@ -105,6 +145,11 @@ class ImageHandler:
         return metadata
 
     def volume_info(self) -> List[Union[str, str]]:
+        """
+        Get all volume info from an image
+
+        :return: All volumes
+        """
         volume = self.info()
 
         volume_info = [
@@ -129,15 +174,38 @@ class ImageHandler:
 
     @staticmethod
     def encase_image(ext: str) -> bool:
+        """
+        Check if a file is an ewf file based on the extension
+
+        :param ext: Extension to check
+
+        :return: Whether the file is an ewf image or not
+        """
         return ext == 'e01' or ext == 's01' or ext == 'ex01' \
             or ext == 'l01' or ext == 'lx01'
 
     @staticmethod
     def rreplace(s: str, old: str, new: str) -> str:
+        """
+        Right replace text in string
+
+        :param s: String to replace a word in
+        :param old: The word that will be replaced
+        :param new: The world that will replace the old word
+
+        :return: String with te right replaced word
+        """
         return (s[::-1].replace(old[::-1], new[::-1], 1))[::-1]
 
     @staticmethod
     def partition_check(part: TSK_VS_PART_INFO) -> bool:
+        """
+        Check if the partition is valid
+
+        :param part: Partition object
+
+        :return: Whether the partition is valid or not
+        """
         tables_to_ignore = ['Unallocated', 'Extended', 'Primary Table']
         decoded = part.desc.decode('UTF-8')
 
@@ -148,11 +216,24 @@ class ImageHandler:
         )
 
     def get_handle(self) -> Tuple[Volume_Info, Img_Info]:
+        """
+        Get the volume info object and the current image handle
+
+        :return: Volume info object and the handle
+        """
         return self.info(), self.image_handle
 
     @staticmethod
     def open_fs_single_vol(img: Img_Info, path: str) -> \
             Union[Tuple[FS_Info, Directory], Tuple[None, None]]:
+        """
+        Open a single file system
+
+        :param img: Current image handle
+        :param path: Path to open on the filesystem
+
+        :return: Filesystem object and the selected directory
+        """
         try:
             fs = FS_Info(img)
             # noinspection PyArgumentList
@@ -172,6 +253,16 @@ class ImageHandler:
     def open_fs(img: Img_Info, vol: Volume_Info, path: str,
                 part: Volume_Info) -> \
             Union[Tuple[FS_Info, Directory], Tuple[None, None]]:
+        """
+        Open file system
+
+        :param img: Current image handle
+        :param vol: Volume in the image
+        :param path: Path to open on the filesystem
+        :param part: Partition in the image
+
+        :return: Filesystem object and the selected directory
+        """
         try:
             fs = FS_Info(
                 img, offset=part.start * vol.info.block_size)
@@ -188,6 +279,14 @@ class ImageHandler:
 
     @staticmethod
     def nameless_dir(fs_object: File) -> bool:
+        """
+        Check if the directory isn't a current dir or top dir navigation
+        symlink
+
+        :param fs_object: file object
+
+        :return: Whether the dir is a navigation symlink
+        """
         return not hasattr(fs_object, 'info') \
             or not hasattr(fs_object.info, 'name') or not hasattr(
             fs_object.info.name, 'name') or \
@@ -195,6 +294,16 @@ class ImageHandler:
 
     def single_file(self, partition: int, path: str, filename: str,
                     hashing: bool = False) -> Union[str, bytes, None]:
+        """
+        Get a single file from an image
+
+        :param partition: Partition in the image to open
+        :param path: Path to the file
+        :param filename: Filename
+        :param hashing: Whether te return the hash of the file or not
+
+        :return: The hash of the file or the tho file as bytes
+        """
         vol, img = self.get_handle()
         fs, root = None, None
 
@@ -227,6 +336,13 @@ class ImageHandler:
 
     def files(self, search_str: str = None) -> \
             List[List[Union[str, datetime]]]:
+        """
+        Get all files in an image
+
+        :param search_str: Search for a specific regex match
+
+        :return: Files in the image
+        """
         vol, img = self.get_handle()
         recursed_data = []
 
@@ -253,6 +369,19 @@ class ImageHandler:
                       data: List[List[Union[str, datetime]]],
                       parent: List[str], search_str: str = None) -> \
             List[List[Union[str, datetime]]]:
+        """
+        Recurse over all the folder in the image
+
+        :param part: Partition in the image
+        :param fs: Filesystem
+        :param root_dir: Current directory
+        :param dirs: All directories in the current directory
+        :param data: All files and directories in the current directory
+        :param parent: Parent directory
+        :param search_str: Search for a specific regex match
+
+        :return: All recursed data
+        """
         # print('Recurse')
         dirs.append(root_dir.info.fs_file.meta.addr)
         for fs_object in root_dir:
@@ -306,6 +435,13 @@ class ImageHandler:
 
     @staticmethod
     def read_file(fs_object: File) -> bytes:
+        """
+        Read the bytes from an fs_object file
+
+        :param fs_object: fs_oject from the image
+
+        :return: Bytes of the fs_object file
+        """
         offset = 0
         size = getattr(fs_object.info.meta, "size", 0)
 
@@ -313,6 +449,13 @@ class ImageHandler:
 
     @staticmethod
     def hash_file(fs_object: File) -> str:
+        """
+        Hash an fs_object from the image
+
+        :param fs_object: fs_oject from the image
+
+        :return: Sha256 of the fs_object file
+        """
         if fs_object.info.meta.type == TSK_FS_META_TYPE_DIR:
             return ''
 
@@ -333,4 +476,11 @@ class ImageHandler:
 
     @staticmethod
     def convert_time(ts: float) -> Union[str, datetime]:
+        """
+        Covert a date time to an UTC timestamp
+
+        :param ts: date time object
+
+        :return: UTC timestamp
+        """
         return '' if str(ts) == '0' else datetime.utcfromtimestamp(ts)
