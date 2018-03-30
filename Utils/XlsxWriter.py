@@ -14,6 +14,13 @@ class XlsxWriter:
 
     @staticmethod
     def get_save_path(name: str) -> str:
+        """
+        Get the filepath to where the XLSX workbook should be saved
+
+        :param name: Name of the XLSX workbook
+
+        :return: Absolute filepath
+        """
         # Make output folder
         config_path = Path(__file__).parent.parent.joinpath('Output')
         Path.mkdir(Path(config_path), exist_ok=True)
@@ -33,9 +40,24 @@ class XlsxWriter:
         )
 
     def add_worksheet(self, name: str) -> None:
+        """
+        Add an worksheet to the workbook
+
+        :param name: Name of the new worksheet
+
+        :return: None
+        """
         self.worksheets[name] = self.workbook.add_worksheet(name)
 
     def write_headers(self, worksheet: str, headers: List[str]) -> None:
+        """
+        Write headers to a worksheet
+
+        :param worksheet: Worksheet to write the headers to
+        :param headers: A list with all the headers
+
+        :return: None
+        """
         self.headers = headers
 
         bold = self.workbook.add_format({'bold': True})
@@ -45,6 +67,14 @@ class XlsxWriter:
             self.worksheets[worksheet].write(0, i, header, bold)
 
     def write_items(self, worksheet: str, items: List[List[str]]) -> None:
+        """
+        Write items to a worksheet
+
+        :param worksheet: Worksheet to write the headers to
+        :param items: A list with all the items
+
+        :return: None
+        """
         for i, item_list in enumerate(items):
             for j, item in enumerate(item_list):
                 self.worksheets[worksheet].write(i + 2, j, item)
@@ -53,6 +83,14 @@ class XlsxWriter:
 
     @staticmethod
     def get_width(headers: List[str], items: List[List[str]]) -> List[int]:
+        """
+        Get the width of each column in a worksheet based on the content
+
+        :param headers: Headers of the worksheet
+        :param items: All the items in the worksheet
+
+        :return: The best width for each column in the worksheet
+        """
         if headers is None:
             width = [0 for _ in items[0]]
         else:
@@ -66,8 +104,21 @@ class XlsxWriter:
         return width
 
     def set_width(self, worksheet: str, width: List[int]) -> None:
+        """
+        Set the width of each column in a worksheet
+
+        :param worksheet: Worksheet to set the width of the columns
+        :param width: All the widths to use
+
+        :return: None
+        """
         for i, w in enumerate(width):
             self.worksheets[worksheet].set_column(i, i, w + 1)
 
     def close(self):
+        """
+        Close the XLSX workbook object
+
+        :return: None
+        """
         self.workbook.close()
