@@ -98,7 +98,7 @@ class ImageHandler:
             return False
         return True
 
-    def info(self):
+    def info(self) -> Union[Volume_Info, None]:
         """
         Get volume info from image
 
