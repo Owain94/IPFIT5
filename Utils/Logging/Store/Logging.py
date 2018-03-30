@@ -17,6 +17,11 @@ class LoggingStore(metaclass=Singleton):
         self.log = []
 
     def log_added(self) -> None:
+        """
+        Add a log the all logs
+
+        :return: None
+        """
         log = self.logging_store.get_state()
         self.log.append([
             log.get('when'),
@@ -27,6 +32,11 @@ class LoggingStore(metaclass=Singleton):
         ])
 
     def format_logs(self):
+        """
+        Format the log items
+
+        :return: Formatted logs
+        """
         credentials = CredentialStore().credential_store.get_state()
 
         log = []
@@ -46,6 +56,11 @@ class LoggingStore(metaclass=Singleton):
         return log
 
     def save_log(self) -> None:
+        """
+        Save the logs to a XLSX workbook
+
+        :return:  None
+        """
         logs = self.format_logs()
 
         headers = [
@@ -63,10 +78,19 @@ class LoggingStore(metaclass=Singleton):
         xlsx_writer.add_worksheet('Logging')
         xlsx_writer.write_headers('Logging', headers)
         xlsx_writer.write_items('Logging', logs)
+        xlsx_writer.close()
 
     def logging(self, state: Dict[str, str],
                 action: Dict[str, Union[Dict[str, str], str]]) \
             -> Dict[str, str]:
+        """
+        Handle state changes
+
+        :param state: State
+        :param action: Action
+
+        :return: Mutated state
+        """
         if action.get('type') == LoggingStoreActions.ADD_LOG:
             state = {
                 'when': datetime.now(),

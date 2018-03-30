@@ -2,9 +2,14 @@ from threading import Timer
 
 
 def debounce(wait):
-    """ Decorator that will postpone a functions
-        execution until after wait seconds
-        have elapsed since the last time it was invoked. """
+    """
+    Decorator that will postpone a functions execution until after wait seconds
+    have elapsed since the last time it was invoked.
+
+    :param wait: Time te wait in seconds
+
+    :return: Debounce decorator
+    """
     def decorator(fn):
         def debounced(*args, **kwargs):
             def call_it():

@@ -7,6 +7,13 @@ class ImageStoreActions:
 
     @staticmethod
     def set_image(file_path: str) -> Dict[str, str]:
+        """
+        Set image action
+
+        :param file_path: Selected file
+
+        :return: Action result
+        """
         return {
             'type': ImageStoreActions.SET_IMAGE,
             'image': file_path
@@ -14,6 +21,11 @@ class ImageStoreActions:
 
     @staticmethod
     def reset_state() -> Dict[str, str]:
+        """
+        Reset state
+
+        :return: Default state
+        """
         return {
             'type': ImageStoreActions.RESET_STATE
         }

@@ -104,6 +104,13 @@ class Files(ModuleInterface):
         ]
 
     def run(self, *args) -> None:
+        """
+        Run the functions based on the user input
+
+        :param args: args
+
+        :return: None
+        """
         self.options = {
             'hashing': args[0],
             'timeline': args[1],
@@ -122,6 +129,11 @@ class Files(ModuleInterface):
             self.language()
 
     def results(self) -> None:
+        """
+        Save the results of all the functions based on the user input
+
+        :return: None
+        """
         xlsx_writer = None
         count = int(self.options['hashing'])
         count += int(self.options['timeline'])
@@ -150,6 +162,13 @@ class Files(ModuleInterface):
 
     @staticmethod
     def zipped_sha_hash(file):
+        """
+        Get the sha 256 hash of a file inside a compressed file
+
+        :param file: File like object
+
+        :return: Sha256 hash
+        """
         sha256_sum = sha256()
 
         buf = file.read()
@@ -158,7 +177,15 @@ class Files(ModuleInterface):
         return sha256_sum.hexdigest()
 
     @staticmethod
-    def zipped_language(file, raw=False):
+    def zipped_language(file: any, raw: bool=False) -> str:
+        """
+        Get the language of a text file inside a compressed file
+
+        :param file:
+        :param raw: Pure text or encoded text
+
+        :return: Language of the file
+        """
         languages_string = ''
         text = file.readlines()
         decoded = ''
@@ -185,7 +212,18 @@ class Files(ModuleInterface):
 
         return languages_string
 
-    def zip_file(self, file, partition, _, path):
+    def zip_file(self, file: object, partition: str, _: any, path: str) -> \
+            List[Union[str, datetime]]:
+        """
+        Extract all files in a zip file
+
+        :param file: File like object
+        :param partition: Partition number
+        :param _: Unused
+        :param path: Path to the file
+
+        :return: File information
+        """
         lst = []
 
         try:
@@ -247,7 +285,18 @@ class Files(ModuleInterface):
 
         return lst
 
-    def tar_file(self, file, partition, _, path):
+    def tar_file(self, file: object, partition: str, _: any, path: str) -> \
+            List[Union[str, datetime]]:
+        """
+        Extract all files in a tarball
+
+        :param file: file like object
+        :param partition: Partition number
+        :param _: Unused
+        :param path: Path to the file
+
+        :return: File information
+        """
         lst = []
 
         with TarFile(fileobj=file) as zf:
@@ -285,7 +334,18 @@ class Files(ModuleInterface):
 
         return lst
 
-    def gzip_file(self, file, partition, filename, path):
+    def gzip_file(self, file: object, partition: str,
+                  filename: str, path: str) -> List[str]:
+        """
+        Extract a gzipped file
+
+        :param file: File like object
+        :param partition: Partition number
+        :param filename: Name of the file
+        :param path: Path to the file
+
+        :return: File information
+        """
         lst = []
         with GzipFile(fileobj=file) as zf:
             file_content = BytesIO(zf.read())
@@ -323,7 +383,14 @@ class Files(ModuleInterface):
 
         return lst
 
-    def compressed_files(self, file):
+    def compressed_files(self, file: List[Union[str, datetime]]):
+        """
+        Wrapper to extract data from compressed files
+
+        :param file: File information
+
+        :return: File like object and flie information
+        """
         stream = ImageHandler().single_file(int(file[0][-1]),
                                             ImageHandler.rreplace(
                                                 file[8],
@@ -337,6 +404,11 @@ class Files(ModuleInterface):
         }.get(file[2], 'pass')(BytesIO(stream), file[0], file[1], file[8])
 
     def get_files(self) -> None:
+        """
+        Create a list of all files
+
+        :return: None
+        """
         data = ImageHandler().files()
 
         lst = []
@@ -352,16 +424,16 @@ class Files(ModuleInterface):
                     count += 1
                     lst.append(i)
 
-        # file_list = []
-        #
-        # for i, f in enumerate(data[0]):
-        #     f[0:0] = [i]
-        #     file_list.append(f)
-
         self.data['files'] = lst
 
     # noinspection PyUnresolvedReferences
     def timeline(self):
+        """
+        Generate a timeline based on the create, change and modify dates of all
+        files
+
+        :return: None
+        """
         results = []
 
         for item in self.data['files']:
@@ -400,6 +472,13 @@ class Files(ModuleInterface):
     @staticmethod
     def detect_language(file: List[Union[str, datetime]]) \
             -> List[Union[str, datetime]]:
+        """
+        Detect the language of a text file
+
+        :param file: File information
+
+        :return: Language of the file
+        """
         if len(file) > 10:
             return file
 
@@ -431,6 +510,12 @@ class Files(ModuleInterface):
         return file
 
     def language(self) -> None:
+        """
+        Wrapper to detect the language of files on multiple threads and save
+        the outcome
+
+        :return: None
+        """
         data = [x for x in self.data['files'] if x[3] == 'txt']
         with Pool(processes=cpu_count()) as pool:
             results = []
@@ -448,6 +533,13 @@ class Files(ModuleInterface):
 
     @staticmethod
     def hash(file: List[Union[str, datetime]]) -> List[Union[str, datetime]]:
+        """
+        Hash a single file
+
+        :param file: File information
+
+        :return: Hash of the file
+        """
         if len(file) > 10:
             return file
 
@@ -464,6 +556,11 @@ class Files(ModuleInterface):
         return file
 
     def hashes(self) -> None:
+        """
+        Wrapper to hash files on multiple threads and save the outcome
+
+        :return: None
+        """
         with Pool(processes=cpu_count()) as pool:
             results = []
             [
@@ -477,6 +574,13 @@ class Files(ModuleInterface):
         self.data['hashing'] = [x for x in results if x[10] != '']
 
     def format_items(self, part: str) -> List[Union[str, int]]:
+        """
+        Format the items to be writable to a XLSX workbook
+
+        :param part: Part to format
+
+        :return: Formatted items
+        """
         items = []
 
         if part == 'hashing' or part == 'language':
@@ -511,6 +615,12 @@ class Files(ModuleInterface):
         return items
 
     def combined_data(self):
+        """
+        Combine the results of multiple data sources if multiple option were
+        selected by the user
+
+        :return: Combined data
+        """
         if self.options['timeline']:
             data = deepcopy(self.data['timeline'])
         else:
@@ -548,6 +658,13 @@ class Files(ModuleInterface):
         return lst
 
     def save_merged(self, xlsx_writer) -> None:
+        """
+        Save the merged data to a XLSX workbook
+
+        :param xlsx_writer: XLSX workbook object
+
+        :return: None
+        """
         lst = []
 
         if self.options['hashing']:
@@ -564,11 +681,25 @@ class Files(ModuleInterface):
         xlsx_writer.write_items('Combined', self.format_items('combined'))
 
     def save_files(self, xlsx_writer) -> None:
+        """
+        Save the files data to a XLSX workbook
+
+        :param xlsx_writer: XLSX workbook object
+
+        :return: None
+        """
         xlsx_writer.add_worksheet('Files')
         xlsx_writer.write_headers('Files', self.headers)
         xlsx_writer.write_items('Files', self.format_items('files'))
 
     def save_hashes(self, xlsx_writer) -> None:
+        """
+        Save the hashes data to a XLSX workbook
+
+        :param xlsx_writer: XLSX workbook object
+
+        :return: None
+        """
         xlsx_writer.add_worksheet('Hashes')
         xlsx_writer.write_headers('Hashes', [
             *self.headers,
@@ -577,11 +708,25 @@ class Files(ModuleInterface):
         xlsx_writer.write_items('Hashes', self.format_items('hashing'))
 
     def save_timeline(self, xlsx_writer) -> None:
+        """
+        Save the timline data to a XLSX workbook
+
+        :param xlsx_writer: XLSX workbook object
+
+        :return: None
+        """
         xlsx_writer.add_worksheet('Timeline')
         xlsx_writer.write_headers('Timeline', self.headers)
         xlsx_writer.write_items('Timeline', self.format_items('timeline'))
 
     def save_language(self, xlsx_writer) -> None:
+        """
+        Save the language data to a XLSX workbook
+
+        :param xlsx_writer: XLSX workbook object
+
+        :return: None
+        """
         xlsx_writer.add_worksheet('Language')
         xlsx_writer.write_headers('Language', [
             *self.headers,

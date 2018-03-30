@@ -12,6 +12,14 @@ class ImageStore(metaclass=Singleton):
 
     @staticmethod
     def image(state: str, action: Dict[str, str]) -> str:
+        """
+        Handle state changes
+
+        :param state: State
+        :param action: Action
+
+        :return: Mutated state
+        """
         if state is None:
             state = 'initial'
         elif action.get('type') == ImageStoreActions.SET_IMAGE:
