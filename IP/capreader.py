@@ -426,8 +426,9 @@ class PcapReader():
             if any(ip in compare for ip in [src, dst])
         }
 
-    @Reader.compatible(pyshark=lambda f: pyshark.FileCapture(f, keep_packets=False),
-                       dpkt=lambda f: dpkt.pcap.Reader(f))
+    @Reader.compatible(dpkt=lambda f: dpkt.pcap.Reader(f),
+                        pyshark=lambda f: pyshark.FileCapture(f,
+                            keep_packets=False))
     def set_compatible(self, pyshark, dpkt):
         """
         sets self.dpkt_compatible and self.pyshark_compatible
