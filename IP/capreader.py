@@ -24,17 +24,6 @@ class Reader(object, metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def is_compatible(f: str) -> bool:
-        """
-        Checks if a given file can be read with this reader
-        :param f: The file that should be checked
-        :return: True/False depending on if this reader can read the file
-        """
-        raise NotImplementedError(
-            "This checks if the given file can be read using this reader.")
-
-    @staticmethod
-    @abc.abstractmethod
     def extract_ips(f: str) -> Iterable[Tuple[str, str]]:
         """
         Extracts the ip-addresses from a pcap file
@@ -90,7 +79,7 @@ def try_open(func):
     def wrapper(*args, **kwargs):
         f = args[0]
         try:
-            with open(args[0], 'rb') as f:
+            with open(f, 'rb') as f:
                 func(f, **kwargs)
                 return True
         except Exception:
@@ -541,9 +530,9 @@ def fancy_print():
 
 if __name__ == '__main__':
     pcapreader = PcapReader([
-        r"E:\converted.pcap",
-        r"E:\pcap_test.pcap",
-        r"E:\pcap_test1.pcap",
+        r"F:\converted.pcap",
+        r"F:\pcap_test.pcap",
+        r"F:\pcap_test1.pcap",
         r"C:\Users\Kasper\Documents\HSL\Jaar 2\Periode 3\capture_test.pcapng"
     ])
 
