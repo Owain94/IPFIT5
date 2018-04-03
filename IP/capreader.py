@@ -25,11 +25,10 @@ class Reader(object, metaclass=abc.ABCMeta):
     @staticmethod
     @abc.abstractmethod
     def is_compatible(f: str) -> bool:
-        """Checks if a given file can be read with this reader
-            Args:
-                file (str): The file that should be checked
-            Returns:
-                bool: True/False depending on if this reader can read the file
+        """
+        Checks if a given file can be read with this reader
+        :param f: The file that should be checked
+        :return: True/False depending on if this reader can read the file
         """
         raise NotImplementedError(
             "This checks if the given file can be read using this reader.")
@@ -37,13 +36,10 @@ class Reader(object, metaclass=abc.ABCMeta):
     @staticmethod
     @abc.abstractmethod
     def extract_ips(f: str) -> Iterable[Tuple[str, str]]:
-        """Extracts the ip-addresses from a pcap file
-
-            Args:
-                file: the pcap to be read
-            Returns:
-                Generator: An iterable over the ip-addresses in the given
-                pcap file
+        """
+        Extracts the ip-addresses from a pcap file
+        :param f: the pcap to be read
+        :return: An iterable over the ip-addresses in the given pcap file
         """
         raise NotImplementedError(
             "Extracting of ip-addresses is one of the 2 things this class"
@@ -52,12 +48,10 @@ class Reader(object, metaclass=abc.ABCMeta):
     @staticmethod
     @abc.abstractmethod
     def extract_all(f: str) -> Iterable[Tuple[str, str, str, datetime]]:
-        """Extracts the ip-addresses, used protocoll, and timestamp
-            Args:
-                file: the pcap to be read
-            Returns:
-                Generator: An iterable over the ip-addresses,
-                           protocolls and timestamp
+        """
+        Extracts the ip-addresses, used protocoll, and timestamp
+        :param f: the pcap to be read
+        :return: An iterable over the ip-addresses, protocolls and timestamp
         """
         raise NotImplementedError(
             "This returns a generator that yields tuples of (ip.src, ip.dst,"
@@ -108,27 +102,20 @@ class DPKTReader(Reader):
 
     @staticmethod
     def inet_to_str(inet) -> str:
-        """Convert inet object to a string
-
-            Args:
-                inet (inet struct): inet network address
-            Returns:
-                str: Printable/readable IP address
+        """
+        convers inet object to a string
+        :param inet: inet object
+        :return: printable/readable Ip address
         """
         return inet_ntop(AF_INET, inet)
 
     @staticmethod
     def to_protocoll(n: int) -> str:
-        """Converts a given number to a protocoll.
-            Returns 'unknown' if the number could not be found in the map
-
-        Args:
-            n: the number to be converted
-
-        Returns:
-            str: Printable/readble protocoll
         """
-
+        converts a given number to a protocoll
+        :param n: int to be converted
+        :return: the protocoll
+        """
         return {
             1: "ICMP",
             2: "IGMP",
@@ -354,12 +341,10 @@ class Hasher():
 
     @staticmethod
     def hash(fi: str) -> Tuple[str, str]:
-        """Hashes a given file
-            Args:
-                file (str): The file that needs to be hashes
-            Returns:
-                Tuple[str, str]: A tuple containing the filename,
-                                 and the associated hash
+        """
+        hashes a given file
+        :param fi: the file to be hashed
+        :return: tuple containing the filename, and the hash
         """
         hasher = hashlib.sha256()
         s = Hasher.getSize(fi)
@@ -382,11 +367,11 @@ class CompatibleException(Exception):
 
 
 def check_and_set_compatible(func):
-    '''
+    """
     wrapper to automatically check if the PcapReader's instance
     has self.pyshark_compatible and self.dpkt_compatibe set.
     if not, sets them.
-    '''
+    """
 
     def wrapper(self, *args, **kwargs):
         if len(self.pyshark_compatible) == 0 and \
@@ -416,11 +401,24 @@ class PcapReader():
 
     @staticmethod
     def read(f: str, reader: Reader) -> Set[str]:
+        """
+        extracts all ip's from a given pcap, with a given reader
+        :param f: pcap to be read
+        :reader: the reader to be read with
+        :return: set of unique ip's in the pcap
+        """
         return {ip for ip in reader.extract_ips(f)}
 
     @staticmethod
     def read_all(f: str, reader: Reader, compare: List[str]) \
             -> Set[Tuple[str, str, str, datetime]]:
+        """
+        extract the src, dst, prot, stamp from a given pcap
+        :param f: the pcap-file
+        :param reader: the reader to be read with
+        :param compare: list to compare the ip's with
+        :return: set of (src, dst, prot stamp)
+        """
 
         return {
             (src, dst, prot, stamp) for (src, dst, prot, stamp)
@@ -428,9 +426,15 @@ class PcapReader():
             if any(ip in compare for ip in [src, dst])
         }
 
-    @Reader.compatible(pyshark=lambda f: pyshark.FileCapture(f),
-                       dpkt=lambda f: dpkt.pcap.Reader(f, keep_packets=False))
+    @Reader.compatible(pyshark=lambda f: pyshark.FileCapture(f, keep_packets=False),
+                       dpkt=lambda f: dpkt.pcap.Reader(f))
     def set_compatible(self, pyshark, dpkt):
+        """
+        sets self.dpkt_compatible and self.pyshark_compatible
+        :param pyshark: lambda for trying to read the pcap with pyshark
+        :param dpkt: lambda for trying to read the pcap with dpkt
+        :return: none
+        """
         for f in self.files:
             if dpkt(f):
                 self.dpkt_compatible.append(f)
@@ -443,6 +447,10 @@ class PcapReader():
                     "None of the readers could read this pcapfile")
 
     def hash(self) -> List[Tuple[str, str]]:
+        """
+        Hashes all files of self
+        :return: list of tuples, containg the filename and the hash
+        """
 
         self.data["hashes"] = self.pool.map(Hasher.hash, self.files)
 
@@ -450,13 +458,9 @@ class PcapReader():
 
     @check_and_set_compatible
     def extract_ips(self) -> List[str]:
-        """Extracts the ip-addresses using a Reader. Also set's the instance's
-        ips to the ip-addresses found, so they can be used in other methods.
-
-            Args:
-                -
-            Returns:
-                List: A list of unique IP's found in all given pcap-files
+        """
+        extracts the ip's from every file in self.files
+        :return: list of unique ip's
         """
         # DPKT
         extracted_sets = self.pool.map(
@@ -472,13 +476,10 @@ class PcapReader():
         return list(self.data["ip-list"])
 
     def in_common(self, other: str) -> List[str]:
-        """Returns a list of all ip-addresses that both occure in the pcaps,
-            and in the given file
-
-            Args:
-                other: The file to be compared with
-            Returns:
-                List of common ip-addresses
+        """
+        Check ip's found in the given file for similarities with it's own list
+        :param other: file to be read
+        :return: list of similarities
         """
         with open(other, 'r') as f:
             to_compare = {line.rstrip() for line in f.readlines()}
@@ -491,14 +492,9 @@ class PcapReader():
     @check_and_set_compatible
     def generate_timeline(self) -> List[
             Tuple[str, str, str, datetime]]:
-        """Generates a timeline of all ip-addresses
-            in commen with the provided list
-
-            Args:
-                -
-            Returns:
-                Tuple[st, str, str, datetime]:
-                    (src-ip, dst-ip, protocoll, timestamp)
+        """
+        generates a timeline of all ip-addresses
+        :return: List of Tuples containing src, dst, prot, stamp
         """
 
         # DPKT
