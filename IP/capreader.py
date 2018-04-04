@@ -15,8 +15,11 @@ from multiprocessing import Pool, cpu_count
 from typing import Iterable, Tuple, List, Set
 from socket import inet_ntop, AF_INET, AF_INET6
 
-import socket
 from warnings import filterwarnings
+
+from Utils.XlsxWriter import XlsxWriter
+from Utils.Logging.Logging import Logging
+from Interfaces.ModuleInterface import ModuleInterface
 
 filterwarnings(action="ignore")
 
@@ -372,10 +375,12 @@ def check_and_set_compatible(func):
     return wrapper
 
 
-class PcapReader():
+class PcapReader(ModuleInterface):
 
-    def __init__(self, files):
+    def __init__(self, files, to_check):
+        self.logger = Logging(self.__class__.__name__).logger
         self.files = files
+        self.to_check = to_check
         self.dpkt_compatible = []
         self.pyshark_compatible = []
         self.pool = Pool(cpu_count())
@@ -387,6 +392,35 @@ class PcapReader():
             "ip-list": set(),
             "similarities": set(),
         }
+    
+    def run(self, *args):
+        self.hash()
+        self.extract_ips()
+        self.in_common()
+        self.generate_timeline()
+        self.whoisinfo()
+    
+    def results(self):
+        xlsx_writer = XlsxWriter('ips')
+       
+        #write the hashes
+        self.write_xls(xlsx_writer, "Hashes", ["Filename", "Sha256-hash"], self.data["hashes"])
+        
+        #write the unique ip's found
+        self.write_xls(xlsx_writer, "Unique-ips", ["IPS"], [[ip] for ip in self.data["ip-list"]])
+        
+        #write the ip's in commons with the provided file
+        self.write_xls(xlsx_writer, "Commons", ["Common"], [[ip] for ip in self.data["similarities"]])
+        
+        #write the timeline
+        self.write_xls(xlsx_writer, "Timeline", ["ip-src", "ip-dst", "protocoll", "time"], self.data["timeline"])
+
+        xlsx_writer.close()
+
+    def write_xls(self, xlsxwriter, worksheetname, headers, data):
+        xlsxwriter.add_worksheet(worksheetname)
+        xlsxwriter.write_headers(worksheetname, headers)
+        xlsxwriter.write_items(worksheetname, [*data])
 
     @staticmethod
     def read(f: str, reader: Reader) -> Set[str]:
@@ -465,13 +499,13 @@ class PcapReader():
 
         return list(self.data["ip-list"])
 
-    def in_common(self, other: str) -> List[str]:
+    def in_common(self) -> List[str]:
         """
         Check ip's found in the given file for similarities with it's own list
         :param other: file to be read
         :return: list of similarities
         """
-        with open(other, 'r') as f:
+        with open(self.to_check, 'r') as f:
             to_compare = {line.rstrip() for line in f.readlines()}
 
             self.data["similarities"] = self.data["ip-list"].intersection(
@@ -505,6 +539,9 @@ class PcapReader():
 
         self.data["timeline"] = sorted(tmp_timeline, key=lambda line: line[3])
 
+        #Check if there's a better way to convert datatime's to str ...there should be?
+        self.data["timeline"] = [(*stuff, str(stamp)) \
+            for (*stuff, stamp) in self.data["timeline"]]
         return self.data["timeline"]
 
     @staticmethod
@@ -522,42 +559,3 @@ class PcapReader():
         self.data["whois-info"] = self.pool.map(
             PcapReader.whois_info_ip, self.data["similarities"])
         return self.data["whois-info"]
-
-
-def fancy_print():
-    print("\n---------------------------------------------------------\n")
-
-
-if __name__ == '__main__':
-    pcapreader = PcapReader([
-        r"F:\converted.pcap",
-        r"F:\pcap_test.pcap",
-        r"F:\pcap_test1.pcap",
-        r"C:\Users\Kasper\Documents\HSL\Jaar 2\Periode 3\capture_test.pcapng"
-    ])
-
-    fancy_print()
-    hashes = pcapreader.hash()
-    for hash in hashes:
-        print(hash)
-
-    fancy_print()
-    ips = pcapreader.extract_ips()
-    for ip in ips:
-        print(ip)
-    fancy_print()
-
-    common = pcapreader.in_common('testjes.txt')
-    for c in common:
-        print(c)
-
-    fancy_print()
-    timeline = pcapreader.generate_timeline()
-    for line in timeline:
-        print(line)
-
-    fancy_print()
-    whois = pcapreader.whoisinfo()
-    for (ip, info) in whois:
-        print(ip)
-        pprint(info)
