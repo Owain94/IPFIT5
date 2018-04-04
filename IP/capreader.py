@@ -392,28 +392,32 @@ class PcapReader(ModuleInterface):
             "ip-list": set(),
             "similarities": set(),
         }
-    
+
     def run(self, *args):
         self.hash()
         self.extract_ips()
         self.in_common()
         self.generate_timeline()
         self.whoisinfo()
-    
+
     def results(self):
         xlsx_writer = XlsxWriter('ips')
-       
-        #write the hashes
-        self.write_xls(xlsx_writer, "Hashes", ["Filename", "Sha256-hash"], self.data["hashes"])
-        
-        #write the unique ip's found
-        self.write_xls(xlsx_writer, "Unique-ips", ["IPS"], [[ip] for ip in self.data["ip-list"]])
-        
-        #write the ip's in commons with the provided file
-        self.write_xls(xlsx_writer, "Commons", ["Common"], [[ip] for ip in self.data["similarities"]])
-        
-        #write the timeline
-        self.write_xls(xlsx_writer, "Timeline", ["ip-src", "ip-dst", "protocoll", "time"], self.data["timeline"])
+
+        # write the hashes
+        self.write_xls(xlsx_writer, "Hashes", [
+                       "Filename", "Sha256-hash"], self.data["hashes"])
+
+        # write the unique ip's found
+        self.write_xls(xlsx_writer, "Unique-ips",
+                       ["IPS"], [[ip] for ip in self.data["ip-list"]])
+
+        # write the ip's in commons with the provided file
+        self.write_xls(xlsx_writer, "Commons", ["Common"], [
+                       [ip] for ip in self.data["similarities"]])
+
+        # write the timeline
+        self.write_xls(xlsx_writer, "Timeline", [
+                       "ip-src", "ip-dst", "protocoll", "time"], self.data["timeline"])
 
         xlsx_writer.close()
 
@@ -539,9 +543,9 @@ class PcapReader(ModuleInterface):
 
         self.data["timeline"] = sorted(tmp_timeline, key=lambda line: line[3])
 
-        #Check if there's a better way to convert datatime's to str ...there should be?
-        self.data["timeline"] = [(*stuff, str(stamp)) \
-            for (*stuff, stamp) in self.data["timeline"]]
+        # Check if there's a better way to convert datatime's to str ...there should be?
+        self.data["timeline"] = [(*stuff, str(stamp))
+                                 for (*stuff, stamp) in self.data["timeline"]]
         return self.data["timeline"]
 
     @staticmethod
