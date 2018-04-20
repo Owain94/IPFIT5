@@ -24,11 +24,13 @@ from Interfaces.ModuleInterface import ModuleInterface
 
 filterwarnings(action="ignore")
 
+
 def once(item):
     """
     used for Iterating once over any item.
     """
     yield item
+
 
 class Reader(object, metaclass=abc.ABCMeta):
 
@@ -381,6 +383,7 @@ def check_and_set_compatible(func):
         return func(self, *args, **kwargs)
     return wrapper
 
+
 class PcapReader(ModuleInterface):
 
     def __init__(self, files, to_check):
@@ -425,16 +428,16 @@ class PcapReader(ModuleInterface):
         self.write_xls(xlsx_writer, "Timeline", [
                        "ip-src", "ip-dst", "protocoll", "time"], self.data["timeline"])
 
-        has_dict = lambda item: type(item[1]) == dict
+        def has_dict(item): return type(item[1]) == dict
         # write whoisinfo.
-        self.write_xls(xlsx_writer, "Whoisinfo", 
-            list(next(
-                chain(once("Ip"), item[1].keys()) \
-                for item in self.data["whois-info"] if has_dict(item)
-            )),
-            [[str(v) for v in chain(once(item[0]), item[1].values())] 
-                for item in self.data["whois-info"] if has_dict(item)]
-        )
+        self.write_xls(xlsx_writer, "Whoisinfo",
+                       list(next(
+                           chain(once("Ip"), item[1].keys())
+                           for item in self.data["whois-info"] if has_dict(item)
+                       )),
+                       [[str(v) for v in chain(once(item[0]), item[1].values())]
+                        for item in self.data["whois-info"] if has_dict(item)]
+                       )
         xlsx_writer.close()
 
     def write_xls(self, xlsxwriter, worksheetname, headers, data):
