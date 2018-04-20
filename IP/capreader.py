@@ -429,8 +429,11 @@ class PcapReader(ModuleInterface):
                        "ip-src", "ip-dst", "protocoll", "time"], self.data["timeline"])
 
         def has_dict(item): return type(item[1]) == dict
+
         def make_iter(): return filter(has_dict, self.data["whois-info"])
-        def chaining_once(iter_once, iterator): return chain(once(iter_once), iterator)
+
+        def chaining_once(iter_once, iterator): return chain(
+            once(iter_once), iterator)
         # write whoisinfo.
         self.write_xls(xlsx_writer, "Whoisinfo",
                        list(next(
