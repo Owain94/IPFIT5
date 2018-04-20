@@ -427,9 +427,10 @@ class PcapReader(ModuleInterface):
         # Whois-info is a bit weird to write
         xlsx_writer.add_worksheet("whoisinfo")
         xlsx_writer.write_headers("whoisinfo", headers)
-        
-        l = [[str(v) for v in item[1].values()] for item in self.data["whois-info"] if type(item[1]) == dict]
-         
+
+        l = [[str(v) for v in item[1].values()]
+             for item in self.data["whois-info"] if type(item[1]) == dict]
+
         xlsx_writer.write_items("whoisinfo", l)
 
         xlsx_writer.close()
