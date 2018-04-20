@@ -473,8 +473,7 @@ class PcapReader(ModuleInterface):
         }
 
     @Reader.compatible(dpkt=lambda f: dpkt.pcap.Reader(f),
-                       pyshark=lambda f: pyshark.FileCapture(f,
-                                                             keep_packets=False))
+                       pyshark=lambda f: pyshark.FileCapture(f))
     def set_compatible(self, pyshark, dpkt):
         """
         sets self.dpkt_compatible and self.pyshark_compatible
