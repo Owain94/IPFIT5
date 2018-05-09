@@ -347,9 +347,8 @@ class MenuFrame(Frame):
             )
 
         if self.data.get('IB', False):
-            execute_list.append(
-                Process(target=self.exec_ip, args=(ip,))
-            )
+            
+            self.exec_ip(ip)
 
         processes = []
         for p in execute_list:
