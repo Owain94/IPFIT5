@@ -24,7 +24,7 @@ class Photos(ModuleInterface):
         filtered = self.filter_files(files)
         hashed = self.hash(filtered)
 
-        print("\n".join(map(str,hashed)))
+        # print("\n".join(map(str,hashed)))
         self.data = hashed
         self.get_exif(hashed)
 
@@ -35,13 +35,15 @@ class Photos(ModuleInterface):
         :return: None
         """
 
-        xlsx_writer = XlsxWriter('Photos.xlsx')
+        xlsx_writer = XlsxWriter('photos')
         xlsx_writer.add_worksheet("Photos")
         xlsx_writer.write_headers("Photos", ["Partite", "File", "File EXT",
-        "File Type", "Create date", "Modify Date", "Change Date", "Size in kb",
+                                             "File Type", "Create date",
+                                             "Modify Date", "Change Date",
+                                             "Size in kb",
                                              "File path", "Hash-waarde"])
         for row in self.data:
-            print(row[4])
+            # print(row[4])
             row[4] = str(row[4])
         xlsx_writer.write_items("Photos", self.data)
 
@@ -66,9 +68,9 @@ class Photos(ModuleInterface):
         lst = []
 
         for file in files:
-            if file[2] == 'jpeg' or \
-                    file[2] == 'jpg' or \
-                    file[2] == 'png':
+            if file[2] == 'jpeg' and '._' not in file[1] or \
+                    file[2] == 'jpg' and '._' not in file[1] or \
+                    file[2] == 'png' and '._' not in file[1]:
                 lst.append(file)
 
         return lst
@@ -120,12 +122,15 @@ class Photos(ModuleInterface):
             fake_file = BytesIO(self.get_bytes(file))
             tags = process_file(fake_file)
 
-            for tag in tags.keys():
-                if tag not in ('JPEGThumbnail', 'TIFFThumbnail', 'Filename',
-                               'EXIF MakerNote'):
-                    print("Key: %s, value %s" % (tag, tags[tag]))
+            for _ in tags.keys():
+                # if tag not in ('JPEGThumbnail', 'TIFFThumbnail', 'Filename',
+                #                'EXIF MakerNote'):
+                #     print("Key: %s, value %s" % (tag, tags[tag]))
                 # verdelen van gegevens
-                for tag,value in files.items():
-                    decoded = file.get(tag,tags)
-                    if decoded == "Make":
-                        return value
+                try:
+                    for tag, value in files.items():
+                        decoded = file.get(tag, tags)
+                        if decoded == "Make":
+                            return value
+                except AttributeError:
+                    continue

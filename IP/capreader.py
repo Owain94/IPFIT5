@@ -1,26 +1,22 @@
-from ipwhois import IPWhois
-import pyshark
-import dpkt
-
 import abc
 import hashlib
-import itertools
-from os import stat
-from enum import Enum
-from pprint import pprint
-from itertools import chain
 from datetime import datetime
 from functools import partial
-from itertools import product
+from itertools import chain
 from multiprocessing import Pool, cpu_count
+from os import stat
+from pathlib import Path
+from socket import inet_ntop, AF_INET
 from typing import Iterable, Tuple, List, Set
-from socket import inet_ntop, AF_INET, AF_INET6
-
 from warnings import filterwarnings
 
-from Utils.XlsxWriter import XlsxWriter
-from Utils.Logging.Logging import Logging
+import dpkt
+import pyshark
+from ipwhois import IPWhois
+
 from Interfaces.ModuleInterface import ModuleInterface
+from Utils.Logging.Logging import Logging
+from Utils.XlsxWriter import XlsxWriter
 
 filterwarnings(action="ignore")
 
@@ -79,6 +75,7 @@ class Reader(object, metaclass=abc.ABCMeta):
 
         def wrapper(self, *args, **kwargs):
             return func(self, pyshark=pysharkcompatible, dpkt=dpktcompatible)
+
         return wrapper
 
 
@@ -88,6 +85,7 @@ def try_open(func):
     On succes, return 'true',
     on failure, return 'false'
     '''
+
     def wrapper(*args, **kwargs):
         f = args[0]
         try:
@@ -96,6 +94,7 @@ def try_open(func):
                 return True
         except Exception:
             return False
+
     return wrapper
 
 
@@ -347,20 +346,18 @@ class Hasher():
         :param fi: the file to be hashed
         :return: tuple containing the filename, and the hash
         """
-        hasher = hashlib.sha256()
-        s = Hasher.getSize(fi)
-
-        # On 0 bit files, it doesnt make sense to hash it.
-        if s == 0:
-            return (fi, "")
+        # hasher = hashlib.sha256()
+        # s = Hasher.getSize(fi)
+        #
+        # # On 0 bit files, it doesnt make sense to hash it.
+        # if s == 0:
+        #     return (fi, "")
 
         with open(fi, 'rb') as f:
-            buf = f.read(Hasher.BLOCKSIZE)
-            while len(buf) > 0:
-                hasher.update(buf)
-                buf = f.read(Hasher.BLOCKSIZE)
+            hasher = hashlib.md5()
+            hasher.update(f.read())
 
-        return (fi, hasher.hexdigest())
+            return (fi, hasher.hexdigest())
 
 
 class CompatibleException(Exception):
@@ -377,19 +374,19 @@ def check_and_set_compatible(func):
     def wrapper(self, *args, **kwargs):
         if len(self.pyshark_compatible) == 0 and \
                 len(self.dpkt_compatible) == 0:
-
             self.set_compatible()
 
         return func(self, *args, **kwargs)
+
     return wrapper
 
 
 class PcapReader(ModuleInterface):
 
-    def __init__(self, files, to_check):
+    def __init__(self, files):
         self.logger = Logging(self.__class__.__name__).logger
         self.files = files
-        self.to_check = to_check
+        self.to_check = PcapReader.get_config_save_path('ip')
         self.dpkt_compatible = []
         self.pyshark_compatible = []
         self.pool = Pool(cpu_count())
@@ -401,6 +398,24 @@ class PcapReader(ModuleInterface):
             "ip-list": set(),
             "similarities": set(),
         }
+
+    @staticmethod
+    def get_config_save_path(config: str) -> Path:
+        """
+        Get a path to save the config to
+
+        :param config: Config name
+
+        :return: Path to file
+        """
+        # Make config folder
+        config_path = Path(__file__).parent.parent.joinpath('Configs')
+
+        # Make config file
+        config_file_path = Path(config_path.joinpath("{0}.cfg".format(config)))
+        Path.touch(config_file_path, exist_ok=True)
+
+        return config_file_path
 
     def run(self, *args):
         self.hash()
@@ -414,7 +429,7 @@ class PcapReader(ModuleInterface):
 
         # write the hashes
         self.write_xls(xlsx_writer, "Hashes", [
-                       "Filename", "Sha256-hash"], self.data["hashes"])
+            "Filename", "Sha256-hash"], self.data["hashes"])
 
         # write the unique ip's found
         self.write_xls(xlsx_writer, "Unique-ips",
@@ -422,11 +437,11 @@ class PcapReader(ModuleInterface):
 
         # write the ip's in commons with the provided file
         self.write_xls(xlsx_writer, "Commons", ["Common"], [
-                       [ip] for ip in self.data["similarities"]])
+            [ip] for ip in self.data["similarities"]])
 
         # write the timeline
         self.write_xls(xlsx_writer, "Timeline", [
-                       "ip-src", "ip-dst", "protocoll", "time"], self.data["timeline"])
+            "ip-src", "ip-dst", "protocoll", "time"], self.data["timeline"])
 
         def has_dict(item): return type(item[1]) == dict
 
@@ -434,13 +449,15 @@ class PcapReader(ModuleInterface):
 
         def chaining_once(iter_once, iterator): return chain(
             once(iter_once), iterator)
+
         # write whoisinfo.
         self.write_xls(xlsx_writer, "Whoisinfo",
                        list(next(
                            chaining_once("Ip", item[1].keys())
                            for item in make_iter()
                        )),
-                       [[str(v) for v in chaining_once(item[0], item[1].values())]
+                       [[str(v) for v in
+                         chaining_once(item[0], item[1].values())]
                         for item in make_iter()]
                        )
         xlsx_writer.close()
@@ -502,9 +519,8 @@ class PcapReader(ModuleInterface):
         Hashes all files of self
         :return: list of tuples, containg the filename and the hash
         """
-
-        self.data["hashes"] = self.pool.map(Hasher.hash, self.files)
-
+        for i in self.files:
+            self.data['hashes'].append(Hasher.hash(i))
         return self.data["hashes"]
 
     @check_and_set_compatible
@@ -542,7 +558,7 @@ class PcapReader(ModuleInterface):
 
     @check_and_set_compatible
     def generate_timeline(self) -> List[
-            Tuple[str, str, str, datetime]]:
+        Tuple[str, str, str, datetime]]:
         """
         generates a timeline of all ip-addresses
         :return: List of Tuples containing src, dst, prot, stamp
@@ -559,10 +575,10 @@ class PcapReader(ModuleInterface):
         # Pyshark
         tmp_timeline.extend(
             [line for f in self.pyshark_compatible for line in
-                PcapReader.read_all(
-                    f,
-                    reader=PysharkReader,
-                    compare=self.data["similarities"])])
+             PcapReader.read_all(
+                 f,
+                 reader=PysharkReader,
+                 compare=self.data["similarities"])])
 
         self.data["timeline"] = sorted(tmp_timeline, key=lambda line: line[3])
 
