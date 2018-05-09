@@ -8,6 +8,7 @@ import itertools
 from os import stat
 from enum import Enum
 from pprint import pprint
+from itertools import chain
 from datetime import datetime
 from functools import partial
 from itertools import product
@@ -15,35 +16,31 @@ from multiprocessing import Pool, cpu_count
 from typing import Iterable, Tuple, List, Set
 from socket import inet_ntop, AF_INET, AF_INET6
 
-import socket
 from warnings import filterwarnings
 
+from Utils.XlsxWriter import XlsxWriter
+from Utils.Logging.Logging import Logging
+from Interfaces.ModuleInterface import ModuleInterface
+
 filterwarnings(action="ignore")
+
+
+def once(item):
+    """
+    used for Iterating once over any item.
+    """
+    yield item
+
 
 class Reader(object, metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def is_compatible(f: str) -> bool:
-        """Checks if a given file can be read with this reader
-            Args:
-                file (str): The file that should be checked
-            Returns:
-                bool: True/False depending on if this reader can read the file
-        """
-        raise NotImplementedError(
-            "This checks if the given file can be read using this reader.")
-
-    @staticmethod
-    @abc.abstractmethod
     def extract_ips(f: str) -> Iterable[Tuple[str, str]]:
-        """Extracts the ip-addresses from a pcap file
-
-            Args:
-                file: the pcap to be read
-            Returns:
-                Generator: An iterable over the ip-addresses in the given
-                pcap file
+        """
+        Extracts the ip-addresses from a pcap file
+        :param f: the pcap to be read
+        :return: An iterable over the ip-addresses in the given pcap file
         """
         raise NotImplementedError(
             "Extracting of ip-addresses is one of the 2 things this class"
@@ -52,12 +49,10 @@ class Reader(object, metaclass=abc.ABCMeta):
     @staticmethod
     @abc.abstractmethod
     def extract_all(f: str) -> Iterable[Tuple[str, str, str, datetime]]:
-        """Extracts the ip-addresses, used protocoll, and timestamp
-            Args:
-                file: the pcap to be read
-            Returns:
-                Generator: An iterable over the ip-addresses,
-                           protocolls and timestamp
+        """
+        Extracts the ip-addresses, used protocoll, and timestamp
+        :param f: the pcap to be read
+        :return: An iterable over the ip-addresses, protocolls and timestamp
         """
         raise NotImplementedError(
             "This returns a generator that yields tuples of (ip.src, ip.dst,"
@@ -96,7 +91,7 @@ def try_open(func):
     def wrapper(*args, **kwargs):
         f = args[0]
         try:
-            with open(args[0], 'rb') as f:
+            with open(f, 'rb') as f:
                 func(f, **kwargs)
                 return True
         except Exception:
@@ -108,27 +103,20 @@ class DPKTReader(Reader):
 
     @staticmethod
     def inet_to_str(inet) -> str:
-        """Convert inet object to a string
-
-            Args:
-                inet (inet struct): inet network address
-            Returns:
-                str: Printable/readable IP address
+        """
+        convers inet object to a string
+        :param inet: inet object
+        :return: printable/readable Ip address
         """
         return inet_ntop(AF_INET, inet)
 
     @staticmethod
     def to_protocoll(n: int) -> str:
-        """Converts a given number to a protocoll.
-            Returns 'unknown' if the number could not be found in the map
-
-        Args:
-            n: the number to be converted
-
-        Returns:
-            str: Printable/readble protocoll
         """
-
+        converts a given number to a protocoll
+        :param n: int to be converted
+        :return: the protocoll
+        """
         return {
             1: "ICMP",
             2: "IGMP",
@@ -354,12 +342,10 @@ class Hasher():
 
     @staticmethod
     def hash(fi: str) -> Tuple[str, str]:
-        """Hashes a given file
-            Args:
-                file (str): The file that needs to be hashes
-            Returns:
-                Tuple[str, str]: A tuple containing the filename,
-                                 and the associated hash
+        """
+        hashes a given file
+        :param fi: the file to be hashed
+        :return: tuple containing the filename, and the hash
         """
         hasher = hashlib.sha256()
         s = Hasher.getSize(fi)
@@ -382,11 +368,11 @@ class CompatibleException(Exception):
 
 
 def check_and_set_compatible(func):
-    '''
+    """
     wrapper to automatically check if the PcapReader's instance
     has self.pyshark_compatible and self.dpkt_compatibe set.
     if not, sets them.
-    '''
+    """
 
     def wrapper(self, *args, **kwargs):
         if len(self.pyshark_compatible) == 0 and \
@@ -398,10 +384,12 @@ def check_and_set_compatible(func):
     return wrapper
 
 
-class PcapReader():
+class PcapReader(ModuleInterface):
 
-    def __init__(self, files):
+    def __init__(self, files, to_check):
+        self.logger = Logging(self.__class__.__name__).logger
         self.files = files
+        self.to_check = to_check
         self.dpkt_compatible = []
         self.pyshark_compatible = []
         self.pool = Pool(cpu_count())
@@ -414,13 +402,74 @@ class PcapReader():
             "similarities": set(),
         }
 
+    def run(self, *args):
+        self.hash()
+        self.extract_ips()
+        self.in_common()
+        self.generate_timeline()
+        self.whoisinfo()
+
+    def results(self):
+        xlsx_writer = XlsxWriter('ips')
+
+        # write the hashes
+        self.write_xls(xlsx_writer, "Hashes", [
+                       "Filename", "Sha256-hash"], self.data["hashes"])
+
+        # write the unique ip's found
+        self.write_xls(xlsx_writer, "Unique-ips",
+                       ["IPS"], [[ip] for ip in self.data["ip-list"]])
+
+        # write the ip's in commons with the provided file
+        self.write_xls(xlsx_writer, "Commons", ["Common"], [
+                       [ip] for ip in self.data["similarities"]])
+
+        # write the timeline
+        self.write_xls(xlsx_writer, "Timeline", [
+                       "ip-src", "ip-dst", "protocoll", "time"], self.data["timeline"])
+
+        def has_dict(item): return type(item[1]) == dict
+
+        def make_iter(): return filter(has_dict, self.data["whois-info"])
+
+        def chaining_once(iter_once, iterator): return chain(
+            once(iter_once), iterator)
+        # write whoisinfo.
+        self.write_xls(xlsx_writer, "Whoisinfo",
+                       list(next(
+                           chaining_once("Ip", item[1].keys())
+                           for item in make_iter()
+                       )),
+                       [[str(v) for v in chaining_once(item[0], item[1].values())]
+                        for item in make_iter()]
+                       )
+        xlsx_writer.close()
+
+    def write_xls(self, xlsxwriter, worksheetname, headers, data):
+        xlsxwriter.add_worksheet(worksheetname)
+        xlsxwriter.write_headers(worksheetname, headers)
+        xlsxwriter.write_items(worksheetname, [*data])
+
     @staticmethod
     def read(f: str, reader: Reader) -> Set[str]:
+        """
+        extracts all ip's from a given pcap, with a given reader
+        :param f: pcap to be read
+        :reader: the reader to be read with
+        :return: set of unique ip's in the pcap
+        """
         return {ip for ip in reader.extract_ips(f)}
 
     @staticmethod
     def read_all(f: str, reader: Reader, compare: List[str]) \
             -> Set[Tuple[str, str, str, datetime]]:
+        """
+        extract the src, dst, prot, stamp from a given pcap
+        :param f: the pcap-file
+        :param reader: the reader to be read with
+        :param compare: list to compare the ip's with
+        :return: set of (src, dst, prot stamp)
+        """
 
         return {
             (src, dst, prot, stamp) for (src, dst, prot, stamp)
@@ -428,9 +477,15 @@ class PcapReader():
             if any(ip in compare for ip in [src, dst])
         }
 
-    @Reader.compatible(pyshark=lambda f: pyshark.FileCapture(f),
-                       dpkt=lambda f: dpkt.pcap.Reader(f, keep_packets=False))
+    @Reader.compatible(dpkt=lambda f: dpkt.pcap.Reader(f),
+                       pyshark=lambda f: pyshark.FileCapture(f))
     def set_compatible(self, pyshark, dpkt):
+        """
+        sets self.dpkt_compatible and self.pyshark_compatible
+        :param pyshark: lambda for trying to read the pcap with pyshark
+        :param dpkt: lambda for trying to read the pcap with dpkt
+        :return: none
+        """
         for f in self.files:
             if dpkt(f):
                 self.dpkt_compatible.append(f)
@@ -443,6 +498,10 @@ class PcapReader():
                     "None of the readers could read this pcapfile")
 
     def hash(self) -> List[Tuple[str, str]]:
+        """
+        Hashes all files of self
+        :return: list of tuples, containg the filename and the hash
+        """
 
         self.data["hashes"] = self.pool.map(Hasher.hash, self.files)
 
@@ -450,13 +509,9 @@ class PcapReader():
 
     @check_and_set_compatible
     def extract_ips(self) -> List[str]:
-        """Extracts the ip-addresses using a Reader. Also set's the instance's
-        ips to the ip-addresses found, so they can be used in other methods.
-
-            Args:
-                -
-            Returns:
-                List: A list of unique IP's found in all given pcap-files
+        """
+        extracts the ip's from every file in self.files
+        :return: list of unique ip's
         """
         # DPKT
         extracted_sets = self.pool.map(
@@ -471,16 +526,13 @@ class PcapReader():
 
         return list(self.data["ip-list"])
 
-    def in_common(self, other: str) -> List[str]:
-        """Returns a list of all ip-addresses that both occure in the pcaps,
-            and in the given file
-
-            Args:
-                other: The file to be compared with
-            Returns:
-                List of common ip-addresses
+    def in_common(self) -> List[str]:
         """
-        with open(other, 'r') as f:
+        Check ip's found in the given file for similarities with it's own list
+        :param other: file to be read
+        :return: list of similarities
+        """
+        with open(self.to_check, 'r') as f:
             to_compare = {line.rstrip() for line in f.readlines()}
 
             self.data["similarities"] = self.data["ip-list"].intersection(
@@ -491,14 +543,9 @@ class PcapReader():
     @check_and_set_compatible
     def generate_timeline(self) -> List[
             Tuple[str, str, str, datetime]]:
-        """Generates a timeline of all ip-addresses
-            in commen with the provided list
-
-            Args:
-                -
-            Returns:
-                Tuple[st, str, str, datetime]:
-                    (src-ip, dst-ip, protocoll, timestamp)
+        """
+        generates a timeline of all ip-addresses
+        :return: List of Tuples containing src, dst, prot, stamp
         """
 
         # DPKT
@@ -519,6 +566,9 @@ class PcapReader():
 
         self.data["timeline"] = sorted(tmp_timeline, key=lambda line: line[3])
 
+        # Check if there's a better way to convert datatime's to str ...there should be?
+        self.data["timeline"] = [(*stuff, str(stamp))
+                                 for (*stuff, stamp) in self.data["timeline"]]
         return self.data["timeline"]
 
     @staticmethod
@@ -536,42 +586,3 @@ class PcapReader():
         self.data["whois-info"] = self.pool.map(
             PcapReader.whois_info_ip, self.data["similarities"])
         return self.data["whois-info"]
-
-
-def fancy_print():
-    print("\n---------------------------------------------------------\n")
-
-
-if __name__ == '__main__':
-    pcapreader = PcapReader([
-        r"E:\converted.pcap",
-        r"E:\pcap_test.pcap",
-        r"E:\pcap_test1.pcap",
-        r"C:\Users\Kasper\Documents\HSL\Jaar 2\Periode 3\capture_test.pcapng"
-    ])
-
-    fancy_print()
-    hashes = pcapreader.hash()
-    for hash in hashes:
-        print(hash)
-
-    fancy_print()
-    ips = pcapreader.extract_ips()
-    for ip in ips:
-        print(ip)
-    fancy_print()
-
-    common = pcapreader.in_common('testjes.txt')
-    for c in common:
-        print(c)
-
-    fancy_print()
-    timeline = pcapreader.generate_timeline()
-    for line in timeline:
-        print(line)
-
-    fancy_print()
-    whois = pcapreader.whoisinfo()
-    for (ip, info) in whois:
-        print(ip)
-        pprint(info)
