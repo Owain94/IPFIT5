@@ -1,5 +1,6 @@
 from IP import capreader
 
+
 def fancy_print():
     print("\n---------------------------------------------------------\n")
 

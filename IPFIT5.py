@@ -347,7 +347,7 @@ class MenuFrame(Frame):
             )
 
         if self.data.get('IB', False):
-            
+
             self.exec_ip(ip)
 
         processes = []

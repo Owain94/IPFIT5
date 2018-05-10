@@ -558,7 +558,7 @@ class PcapReader(ModuleInterface):
 
     @check_and_set_compatible
     def generate_timeline(self) -> List[
-        Tuple[str, str, str, datetime]]:
+            Tuple[str, str, str, datetime]]:
         """
         generates a timeline of all ip-addresses
         :return: List of Tuples containing src, dst, prot, stamp
