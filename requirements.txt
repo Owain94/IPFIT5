@@ -8,3 +8,4 @@ langdetect
 pyshark
 dpkt
 ipwhois
+exifread

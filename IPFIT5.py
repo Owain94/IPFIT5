@@ -11,12 +11,16 @@ from asciimatics.widgets import Frame, Text, TextBox, Layout, Label, Divider, \
     CheckBox, Button, PopUpDialog
 
 from Files.Files import Files
+from Photos import Photo
+from IP import capreader
+
+from os import path, listdir
+
 from Utils.FilePicker import FilepickerFrame
 from Utils.ImageHandler import ImageHandler
 from Utils.Logging.Store.Logging import LoggingStore
 from Utils.Logging.Store.Logging import LoggingStoreActions
 from Utils.Store.Actions.CredentialsStoreActions import CredentialsStoreActions
-from Utils.Store.Actions.ImageStoreActions import ImageStoreActions
 from Utils.Store.Credentials import CredentialStore
 from Utils.Store.Image import ImageStore
 
@@ -93,6 +97,34 @@ class MenuFrame(Frame):
         self.image_info_button = Button('Image info', self.file_info)
         self.image_info_button.disabled = True
 
+        self.photos_btn = CheckBox('Analyze photo\'s',
+                                   label='',
+                                   name='PA',
+                                   on_change=self.on_change)
+        self.photos_btn.disabled = True
+
+        self.files_one_btn = CheckBox('Hashing',
+                                      label='',
+                                      name='FA',
+                                      on_change=self.on_change)
+        self.files_one_btn.disabled = True
+        self.files_two_btn = CheckBox('Create timeline',
+                                      label='',
+                                      name='FB',
+                                      on_change=self.on_change)
+        self.files_two_btn.disabled = True
+        self.files_three_btn = CheckBox('Detect language',
+                                        label='',
+                                        name='FC',
+                                        on_change=self.on_change)
+        self.files_three_btn.disabled = True
+
+        self.pcap_btn = CheckBox('Analyze PCAPs',
+                                 label='',
+                                 name='IB',
+                                 on_change=self.on_change)
+        self.pcap_btn.disabled = True
+
         self.draw_menu()
 
     def draw_menu(self):
@@ -135,7 +167,7 @@ class MenuFrame(Frame):
         self.add_layout(image_buttons_layout)
 
         image_buttons_layout.add_widget(
-            Button('Select image', self.file_picker), 1)
+            Button('Select image/PCAP', self.file_picker), 1)
         image_buttons_layout.add_widget(self.image_info_button, 2)
         image_buttons_layout.add_widget(Divider(height=3), 1)
         image_buttons_layout.add_widget(Divider(height=3), 2)
@@ -144,38 +176,23 @@ class MenuFrame(Frame):
         self.add_layout(photos_layout)
 
         photos_layout.add_widget(Label('Photo\'s', height=2), 1)
-        photos_layout.add_widget(CheckBox('Lorum ipsum',
-                                          label='',
-                                          name='PA',
-                                          on_change=self.on_change), 1)
+        photos_layout.add_widget(self.photos_btn, 1)
         photos_layout.add_widget(Divider(height=3), 1)
 
         files_layout = Layout([1, 50, 1])
         self.add_layout(files_layout)
 
         files_layout.add_widget(Label('Files', height=2), 1)
-        files_layout.add_widget(CheckBox('Hashing',
-                                         label='',
-                                         name='FA',
-                                         on_change=self.on_change), 1)
-        files_layout.add_widget(CheckBox('Create timeline',
-                                         label='',
-                                         name='FB',
-                                         on_change=self.on_change), 1)
-        files_layout.add_widget(CheckBox('Detect language',
-                                         label='',
-                                         name='FC',
-                                         on_change=self.on_change), 1)
+        files_layout.add_widget(self.files_one_btn, 1)
+        files_layout.add_widget(self.files_two_btn, 1)
+        files_layout.add_widget(self.files_three_btn, 1)
         files_layout.add_widget(Divider(height=3), 1)
 
         ip_layout = Layout([1, 50, 1])
         self.add_layout(ip_layout)
 
         ip_layout.add_widget(Label(label='IP', height=2), 1)
-        ip_layout.add_widget(CheckBox('Lorem ipsum',
-                                      label='',
-                                      name='IB',
-                                      on_change=self.on_change), 1)
+        ip_layout.add_widget(self.pcap_btn, 1)
         ip_layout.add_widget(Divider(height=3), 1)
 
         buttons_layout = Layout([1, 1])
@@ -195,11 +212,20 @@ class MenuFrame(Frame):
         if self.image_handler.check_file():
             self.form_data['IA'] = self.image_store.get_state()
             self.image_info_button.disabled = False
+
+            self.photos_btn.disabled = False
+            self.files_one_btn.disabled = False
+            self.files_two_btn.disabled = False
+            self.files_three_btn.disabled = False
+            self.pcap_btn.disabled = True
         else:
-            self.image_store.dispatch(ImageStoreActions.reset_state())
             self.image_info_button.disabled = True
-            self._scene.add_effect(
-                PopUpDialog(self._screen, 'Could not read image!', ['OK']))
+            self.photos_btn.disabled = True
+            self.files_one_btn.disabled = True
+            self.files_two_btn.disabled = True
+            self.files_three_btn.disabled = True
+            self.pcap_btn.disabled = False
+
 
         self.save()
 
@@ -268,8 +294,10 @@ class MenuFrame(Frame):
         else:
             self.exec()
 
-    def exec_photos(self, photos: any):
-        pass
+    @staticmethod
+    def exec_photos(photos: Photo.Photos):
+        photos.run()
+        photos.results()
 
     def exec_files(self, files: Files):
         files.run(
@@ -279,19 +307,48 @@ class MenuFrame(Frame):
         )
         files.results()
 
-    def exec_ip(self, ip: any):
-        pass
+    @staticmethod
+    def exec_ip(ip: capreader.PcapReader):
+        ip.run()
+        ip.results()
 
     def exec(self):
-        # photos = Photos()
+        photos = Photo.Photos()
         files = Files()
-        # ip = Ip()
 
-        execute_list = [
-            # Process(target=self.exec_photos, args=(photos,)),
-            Process(target=self.exec_files, args=(files,)),
-            # Process(target=self.exec_ip, args=(ip,))
-        ]
+        pth = path.dirname(self.image_store.get_state())
+
+        onlyfiles = [f for f in listdir(pth)
+                     if path.isfile(path.join(pth, f))]
+
+        fls = []
+
+        for i in onlyfiles:
+            ext = path.splitext(i)[1][1:]
+
+            if ext.lower() == 'pcap' or ext.lower() == 'pcapng':
+                if '._' not in i:
+                    fls.append(path.join(pth, i))
+
+        ip = capreader.PcapReader(fls)
+
+        execute_list = []
+
+        if self.data.get('PA', False):
+            execute_list.append(
+                Process(target=self.exec_photos, args=(photos,))
+            )
+
+        if self.data.get('FA', False) or \
+                self.data.get('FB', False) or \
+                self.data.get('FC', False):
+            execute_list.append(
+                Process(target=self.exec_files, args=(files,))
+            )
+
+        if self.data.get('IB', False):
+
+            self.exec_ip(ip)
 
         processes = []
         for p in execute_list:

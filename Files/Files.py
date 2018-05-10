@@ -543,6 +543,9 @@ class Files(ModuleInterface):
         if len(file) > 10:
             return file
 
+        if '._' in file[1]:
+            return file
+
         sha_sum = ImageHandler().single_file(int(file[1][-1]),
                                              ImageHandler.rreplace(
                                                  file[9],
